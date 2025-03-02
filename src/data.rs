@@ -65,7 +65,6 @@ pub mod data {
         }
     }
 
-
     #[derive(Debug, Clone, PartialEq)]
     pub struct Site {
         pub id: i32,
