@@ -1,4 +1,4 @@
-use crate::data::data;
+use crate::data;
 use gdal::errors::GdalError;
 use gdal::raster::{Buffer, GdalDataType};
 use gdal::vector::{Feature, FeatureIterator, Layer, LayerAccess};
