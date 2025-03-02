@@ -19,7 +19,7 @@ use std::sync::LazyLock;
 
 /// Validates if the given string is a valid name/id for a [`Namespace`] or [`Identifier`].
 static RE_VALID_NAMESPACE_AND_ID: LazyLock<regex::Regex> =
-    LazyLock::new(|| regex::Regex::new(r"^[a-z0-9]+$").unwrap());
+    LazyLock::new(|| regex::Regex::new(r"^[a-z0-9]-+$").unwrap());
 
 /// A namespace is a name that is used to group [`Identifier`]s. It effectively owns the resources that are registered on the [`Registry`].
 #[derive(Debug, Hash, Clone, Eq, PartialEq)]

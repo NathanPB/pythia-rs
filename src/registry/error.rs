@@ -31,6 +31,6 @@ impl Error for IllegalNameError {}
 
 impl Display for IllegalNameError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "The provided name is empty or contains illegal characters. Only lowercase alphanumeric characters are allowed.")
+        write!(f, "The provided name is empty or contains illegal characters. Only lowercase alphanumeric and dash characters are allowed.")
     }
 }
