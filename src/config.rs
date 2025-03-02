@@ -3,7 +3,7 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
 use std::borrow::Cow;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::path::PathBuf;
 use std::sync::LazyLock;
@@ -77,10 +77,21 @@ pub struct RasterSitesSourceConfig {
     pub layer_index: usize,
 }
 
+#[derive(Deserialize, Serialize, Clone, Debug)]
+#[serde(untagged)]
+pub enum RunValue {
+    Bool(bool),
+    Number(serde_json::Number),
+    String(String),
+}
+
 #[derive(Validate, Serialize, Deserialize, Clone, Debug)]
 pub struct RunConfig {
     #[validate(regex(path = *RE_VALID_RUN_NAME, message = "Run name must be alphanumeric and contain only underscores and dashes"))]
     pub name: String,
+
+    #[serde(flatten)]
+    pub extra: HashMap<String, RunValue>,
 }
 
 fn validate(_: &Args, config: &Config) -> Result<(), Box<dyn Error>> {
