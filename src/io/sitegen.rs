@@ -1,4 +1,4 @@
-use crate::data;
+use crate::data::{GeoDeg, Site};
 use gdal::errors::GdalError;
 use gdal::raster::{Buffer, GdalDataType};
 use gdal::vector::{Feature, FeatureIterator, Layer, LayerAccess};
@@ -8,8 +8,8 @@ use std::rc::Rc;
 
 /// SiteGenerator allows for streaming Sites from an undetermined source.
 /// The order of the sites is not guaranteed, as different file formats may index their data differently, and pre-sorting is not possible.
-pub trait SiteGenerator: Iterator<Item = data::Site> {}
-impl<T: Iterator<Item = data::Site>> SiteGenerator for T {}
+pub trait SiteGenerator: Iterator<Item = Site> {}
+impl<T: Iterator<Item = Site>> SiteGenerator for T {}
 
 /// Implementation of SiteGenerator that allows streaming from a GDAL vector dataset.
 /// Example usage with https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/1PEEY0:
@@ -46,7 +46,7 @@ impl<'a> VectorSiteGenerator {
 }
 
 impl Iterator for VectorSiteGenerator {
-    type Item = data::Site;
+    type Item = Site;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.feat_iter.is_none() {
@@ -76,7 +76,7 @@ impl Iterator for VectorSiteGenerator {
     }
 }
 
-fn feature_to_site(feature: &Feature, site_id_key: &str) -> Option<data::Site> {
+fn feature_to_site(feature: &Feature, site_id_key: &str) -> Option<Site> {
     if let Some(geometry) = feature.geometry() {
         if geometry.geometry_type() != gdal::vector::OGRwkbGeometryType::wkbPoint {
             return None;
@@ -101,10 +101,10 @@ fn feature_to_site(feature: &Feature, site_id_key: &str) -> Option<data::Site> {
 
         if let Ok(id) = id_result {
             let (lon, lat, _) = geometry.get_point(0);
-            return Some(data::Site {
+            return Some(Site {
                 id,
-                lon: data::GeoDeg::from(lon),
-                lat: data::GeoDeg::from(lat),
+                lon: GeoDeg::from(lon),
+                lat: GeoDeg::from(lat),
             });
         }
     }
@@ -250,7 +250,7 @@ impl RasterSiteGenerator {
 }
 
 impl Iterator for RasterSiteGenerator {
-    type Item = data::Site;
+    type Item = Site;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
@@ -269,10 +269,10 @@ impl Iterator for RasterSiteGenerator {
                     let gt = self.ds.geo_transform().unwrap();
                     let (lon, lat) = gt.apply(x, y);
 
-                    return Some(data::Site {
+                    return Some(Site {
                         id: value,
-                        lon: data::GeoDeg::from(lon + (self.px_size_x / 2.0)),
-                        lat: data::GeoDeg::from(lat - (self.px_size_y / 2.0)),
+                        lon: GeoDeg::from(lon + (self.px_size_x / 2.0)),
+                        lat: GeoDeg::from(lat - (self.px_size_y / 2.0)),
                     });
                 }
             }
@@ -301,105 +301,105 @@ mod tests {
         let i = 0;
 
         let expected = vec![
-            data::Site {
+            Site {
                 id: 3989689,
-                lon: data::GeoDeg::from(14.125),
-                lat: data::GeoDeg::from(13.042),
+                lon: GeoDeg::from(14.125),
+                lat: GeoDeg::from(13.042),
             },
-            data::Site {
+            Site {
                 id: 3989690,
-                lon: data::GeoDeg::from(14.208),
-                lat: data::GeoDeg::from(13.042),
+                lon: GeoDeg::from(14.208),
+                lat: GeoDeg::from(13.042),
             },
-            data::Site {
+            Site {
                 id: 3989691,
-                lon: data::GeoDeg::from(14.292),
-                lat: data::GeoDeg::from(13.042),
+                lon: GeoDeg::from(14.292),
+                lat: GeoDeg::from(13.042),
             },
-            data::Site {
+            Site {
                 id: 3989692,
-                lon: data::GeoDeg::from(14.375),
-                lat: data::GeoDeg::from(13.042),
+                lon: GeoDeg::from(14.375),
+                lat: GeoDeg::from(13.042),
             },
-            data::Site {
+            Site {
                 id: 3989693,
-                lon: data::GeoDeg::from(14.458),
-                lat: data::GeoDeg::from(13.042),
+                lon: GeoDeg::from(14.458),
+                lat: GeoDeg::from(13.042),
             },
-            data::Site {
+            Site {
                 id: 3994009,
-                lon: data::GeoDeg::from(14.125),
-                lat: data::GeoDeg::from(12.958),
+                lon: GeoDeg::from(14.125),
+                lat: GeoDeg::from(12.958),
             },
-            data::Site {
+            Site {
                 id: 3994010,
-                lon: data::GeoDeg::from(14.208),
-                lat: data::GeoDeg::from(12.958),
+                lon: GeoDeg::from(14.208),
+                lat: GeoDeg::from(12.958),
             },
-            data::Site {
+            Site {
                 id: 3994011,
-                lon: data::GeoDeg::from(14.292),
-                lat: data::GeoDeg::from(12.958),
+                lon: GeoDeg::from(14.292),
+                lat: GeoDeg::from(12.958),
             },
-            data::Site {
+            Site {
                 id: 3994012,
-                lon: data::GeoDeg::from(14.375),
-                lat: data::GeoDeg::from(12.958),
+                lon: GeoDeg::from(14.375),
+                lat: GeoDeg::from(12.958),
             },
-            data::Site {
+            Site {
                 id: 3994013,
-                lon: data::GeoDeg::from(14.458),
-                lat: data::GeoDeg::from(12.958),
+                lon: GeoDeg::from(14.458),
+                lat: GeoDeg::from(12.958),
             },
-            data::Site {
+            Site {
                 id: 3998329,
-                lon: data::GeoDeg::from(14.125),
-                lat: data::GeoDeg::from(12.875),
+                lon: GeoDeg::from(14.125),
+                lat: GeoDeg::from(12.875),
             },
-            data::Site {
+            Site {
                 id: 3998330,
-                lon: data::GeoDeg::from(14.208),
-                lat: data::GeoDeg::from(12.875),
+                lon: GeoDeg::from(14.208),
+                lat: GeoDeg::from(12.875),
             },
-            data::Site {
+            Site {
                 id: 3998331,
-                lon: data::GeoDeg::from(14.292),
-                lat: data::GeoDeg::from(12.875),
+                lon: GeoDeg::from(14.292),
+                lat: GeoDeg::from(12.875),
             },
-            data::Site {
+            Site {
                 id: 3998332,
-                lon: data::GeoDeg::from(14.375),
-                lat: data::GeoDeg::from(12.875),
+                lon: GeoDeg::from(14.375),
+                lat: GeoDeg::from(12.875),
             },
-            data::Site {
+            Site {
                 id: 3998333,
-                lon: data::GeoDeg::from(14.458),
-                lat: data::GeoDeg::from(12.875),
+                lon: GeoDeg::from(14.458),
+                lat: GeoDeg::from(12.875),
             },
-            data::Site {
+            Site {
                 id: 3998334,
-                lon: data::GeoDeg::from(14.542),
-                lat: data::GeoDeg::from(12.875),
+                lon: GeoDeg::from(14.542),
+                lat: GeoDeg::from(12.875),
             },
-            data::Site {
+            Site {
                 id: 4002650,
-                lon: data::GeoDeg::from(14.208),
-                lat: data::GeoDeg::from(12.792),
+                lon: GeoDeg::from(14.208),
+                lat: GeoDeg::from(12.792),
             },
-            data::Site {
+            Site {
                 id: 4002651,
-                lon: data::GeoDeg::from(14.292),
-                lat: data::GeoDeg::from(12.792),
+                lon: GeoDeg::from(14.292),
+                lat: GeoDeg::from(12.792),
             },
-            data::Site {
+            Site {
                 id: 4002652,
-                lon: data::GeoDeg::from(14.375),
-                lat: data::GeoDeg::from(12.792),
+                lon: GeoDeg::from(14.375),
+                lat: GeoDeg::from(12.792),
             },
-            data::Site {
+            Site {
                 id: 4002653,
-                lon: data::GeoDeg::from(14.458),
-                lat: data::GeoDeg::from(12.792),
+                lon: GeoDeg::from(14.458),
+                lat: GeoDeg::from(12.792),
             },
         ];
 
@@ -436,105 +436,105 @@ mod tests {
 
         let i = 0;
         let expected = vec![
-            data::Site {
+            Site {
                 id: 3894630,
-                lon: data::GeoDeg::from(12.5418),
-                lat: data::GeoDeg::from(14.875),
+                lon: GeoDeg::from(12.5418),
+                lat: GeoDeg::from(14.875),
             },
-            data::Site {
+            Site {
                 id: 3898947,
-                lon: data::GeoDeg::from(12.2919),
-                lat: data::GeoDeg::from(14.7917),
+                lon: GeoDeg::from(12.2919),
+                lat: GeoDeg::from(14.7917),
             },
-            data::Site {
+            Site {
                 id: 3898948,
-                lon: data::GeoDeg::from(12.3752),
-                lat: data::GeoDeg::from(14.7917),
+                lon: GeoDeg::from(12.3752),
+                lat: GeoDeg::from(14.7917),
             },
-            data::Site {
+            Site {
                 id: 3898949,
-                lon: data::GeoDeg::from(12.4585),
-                lat: data::GeoDeg::from(14.7917),
+                lon: GeoDeg::from(12.4585),
+                lat: GeoDeg::from(14.7917),
             },
-            data::Site {
+            Site {
                 id: 3898975,
-                lon: data::GeoDeg::from(14.6243),
-                lat: data::GeoDeg::from(14.7917),
+                lon: GeoDeg::from(14.6243),
+                lat: GeoDeg::from(14.7917),
             },
-            data::Site {
+            Site {
                 id: 3898976,
-                lon: data::GeoDeg::from(14.7076),
-                lat: data::GeoDeg::from(14.7917),
+                lon: GeoDeg::from(14.7076),
+                lat: GeoDeg::from(14.7917),
             },
-            data::Site {
+            Site {
                 id: 3903264,
-                lon: data::GeoDeg::from(12.042),
-                lat: data::GeoDeg::from(14.7084),
+                lon: GeoDeg::from(12.042),
+                lat: GeoDeg::from(14.7084),
             },
-            data::Site {
+            Site {
                 id: 3903265,
-                lon: data::GeoDeg::from(12.1253),
-                lat: data::GeoDeg::from(14.7084),
+                lon: GeoDeg::from(12.1253),
+                lat: GeoDeg::from(14.7084),
             },
-            data::Site {
+            Site {
                 id: 3903266,
-                lon: data::GeoDeg::from(12.2086),
-                lat: data::GeoDeg::from(14.7084),
+                lon: GeoDeg::from(12.2086),
+                lat: GeoDeg::from(14.7084),
             },
-            data::Site {
+            Site {
                 id: 3903267,
-                lon: data::GeoDeg::from(12.2919),
-                lat: data::GeoDeg::from(14.7084),
+                lon: GeoDeg::from(12.2919),
+                lat: GeoDeg::from(14.7084),
             },
-            data::Site {
+            Site {
                 id: 3903268,
-                lon: data::GeoDeg::from(12.3752),
-                lat: data::GeoDeg::from(14.7084),
+                lon: GeoDeg::from(12.3752),
+                lat: GeoDeg::from(14.7084),
             },
-            data::Site {
+            Site {
                 id: 3903269,
-                lon: data::GeoDeg::from(12.4585),
-                lat: data::GeoDeg::from(14.7084),
+                lon: GeoDeg::from(12.4585),
+                lat: GeoDeg::from(14.7084),
             },
-            data::Site {
+            Site {
                 id: 3903271,
-                lon: data::GeoDeg::from(12.6251),
-                lat: data::GeoDeg::from(14.7084),
+                lon: GeoDeg::from(12.6251),
+                lat: GeoDeg::from(14.7084),
             },
-            data::Site {
+            Site {
                 id: 3903273,
-                lon: data::GeoDeg::from(12.7917),
-                lat: data::GeoDeg::from(14.7084),
+                lon: GeoDeg::from(12.7917),
+                lat: GeoDeg::from(14.7084),
             },
-            data::Site {
+            Site {
                 id: 3903274,
-                lon: data::GeoDeg::from(12.875),
-                lat: data::GeoDeg::from(14.7084),
+                lon: GeoDeg::from(12.875),
+                lat: GeoDeg::from(14.7084),
             },
-            data::Site {
+            Site {
                 id: 3903279,
-                lon: data::GeoDeg::from(13.2915),
-                lat: data::GeoDeg::from(14.7084),
+                lon: GeoDeg::from(13.2915),
+                lat: GeoDeg::from(14.7084),
             },
-            data::Site {
+            Site {
                 id: 3903280,
-                lon: data::GeoDeg::from(13.3748),
-                lat: data::GeoDeg::from(14.7084),
+                lon: GeoDeg::from(13.3748),
+                lat: GeoDeg::from(14.7084),
             },
-            data::Site {
+            Site {
                 id: 3903284,
-                lon: data::GeoDeg::from(13.708),
-                lat: data::GeoDeg::from(14.7084),
+                lon: GeoDeg::from(13.708),
+                lat: GeoDeg::from(14.7084),
             },
-            data::Site {
+            Site {
                 id: 3903286,
-                lon: data::GeoDeg::from(13.8746),
-                lat: data::GeoDeg::from(14.7084),
+                lon: GeoDeg::from(13.8746),
+                lat: GeoDeg::from(14.7084),
             },
-            data::Site {
+            Site {
                 id: 3903293,
-                lon: data::GeoDeg::from(14.4577),
-                lat: data::GeoDeg::from(14.7084),
+                lon: GeoDeg::from(14.4577),
+                lat: GeoDeg::from(14.7084),
             },
         ];
 
