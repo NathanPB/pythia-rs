@@ -77,5 +77,5 @@ pub struct Site {
 #[derive(Debug, Clone)]
 pub struct Context {
     pub site: Site,
-    pub run: config::RunConfig,
+    pub run: config::runs::RunConfig,
 }

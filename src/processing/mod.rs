@@ -12,22 +12,22 @@ struct ContextGenerator {
     site_generator: Box<dyn SiteGenerator>,
     curr_site: Option<Site>,
 
-    runs: Vec<config::RunConfig>,
+    runs: Vec<config::runs::RunConfig>,
     current_run: usize,
 }
 
 impl ContextGenerator {
     /// Creates a new ContextGenerator from a SitesSource configuration and a vector of RunConfig.
     pub fn new(
-        site_src_config: config::SitesSource,
-        runs: Vec<config::RunConfig>,
+        site_src_config: config::sites::SitesSource,
+        runs: Vec<config::runs::RunConfig>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let site_generator: Box<dyn SiteGenerator> = match site_src_config.clone() {
-            config::SitesSource::Vector(cfg) => Box::new(VectorSiteGenerator::new(
+            config::sites::SitesSource::Vector(cfg) => Box::new(VectorSiteGenerator::new(
                 cfg.file.as_str(),
                 cfg.site_id_key,
             )?),
-            config::SitesSource::Raster(cfg) => Box::new(RasterSiteGenerator::new(
+            config::sites::SitesSource::Raster(cfg) => Box::new(RasterSiteGenerator::new(
                 cfg.file.as_str(),
                 cfg.layer_index,
             )?),
@@ -73,13 +73,13 @@ mod tests {
     use crate::processing::ContextGenerator;
     use std::collections::HashMap;
 
-    fn generic_test(config: config::SitesSource, expected_sites: &[i32]) {
+    fn generic_test(config: config::sites::SitesSource, expected_sites: &[i32]) {
         let runs = vec![
-            config::RunConfig {
+            config::runs::RunConfig {
                 name: String::from("r1"),
                 extra: HashMap::new(),
             },
-            config::RunConfig {
+            config::runs::RunConfig {
                 name: String::from("r2"),
                 extra: HashMap::new(),
             },
@@ -111,7 +111,7 @@ mod tests {
 
     #[test]
     fn test_context_generator_vector() {
-        let config = config::SitesSource::Vector(config::VectorSitesSourceConfig {
+        let config = config::sites::SitesSource::Vector(config::sites::VectorSitesSourceConfig {
             file: "testdata/DSSAT-Soils.shp.zip".to_string(),
             site_id_key: "CELL5M".to_string(),
         });
@@ -134,7 +134,7 @@ mod tests {
 
     #[test]
     fn test_context_generator_raster() {
-        let config = config::SitesSource::Raster(config::RasterSitesSourceConfig {
+        let config = config::sites::SitesSource::Raster(config::sites::RasterSitesSourceConfig {
             file: "testdata/DSSAT-Soils.tif".to_string(),
             layer_index: 0,
         });
