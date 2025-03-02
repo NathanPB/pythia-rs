@@ -79,7 +79,7 @@ fn feature_to_site(feature: &Feature, site_id_key: &str) -> Option<data::Site> {
 
         if let Ok(id) = id_result {
             let (lon, lat, _) = geometry.get_point(0);
-            return Some(data::Site { id, lon, lat })
+            return Some(data::Site { id, lon: data::GeoDeg::from(lon), lat: data::GeoDeg::from(lat) })
         }
     }
     None
@@ -93,47 +93,47 @@ mod tests {
     fn test_vector_site_generator() {
         let gen = VectorSiteGenerator::new("testdata/DSSAT-Soils.shp.zip", "CELL5M".to_string()).unwrap();
         let i = 0;
-        
+
         let expected = vec![
-            data::Site { id: 3989689, lon: 14.125, lat: 13.042 },
-            data::Site { id: 3989690, lon: 14.208, lat: 13.042 },
-            data::Site { id: 3989691, lon: 14.292, lat: 13.042 },
-            data::Site { id: 3989692, lon: 14.375, lat: 13.042 },
-            data::Site { id: 3989693, lon: 14.458, lat: 13.042 },
-            data::Site { id: 3994009, lon: 14.125, lat: 12.958 },
-            data::Site { id: 3994010, lon: 14.208, lat: 12.958 },
-            data::Site { id: 3994011, lon: 14.292, lat: 12.958 },
-            data::Site { id: 3994012, lon: 14.375, lat: 12.958 },
-            data::Site { id: 3994013, lon: 14.458, lat: 12.958 },
-            data::Site { id: 3998329, lon: 14.125, lat: 12.875 },
-            data::Site { id: 3998330, lon: 14.208, lat: 12.875 },
-            data::Site { id: 3998331, lon: 14.292, lat: 12.875 },
-            data::Site { id: 3998332, lon: 14.375, lat: 12.875 },
-            data::Site { id: 3998333, lon: 14.458, lat: 12.875 },
-            data::Site { id: 3998334, lon: 14.542, lat: 12.875 },
-            data::Site { id: 4002650, lon: 14.208, lat: 12.792 },
-            data::Site { id: 4002651, lon: 14.292, lat: 12.792 },
-            data::Site { id: 4002652, lon: 14.375, lat: 12.792 },
-            data::Site { id: 4002653, lon: 14.458, lat: 12.792 },
+            data::Site { id: 3989689, lon: data::GeoDeg::from(14.125), lat: data::GeoDeg::from(13.042) },
+            data::Site { id: 3989690, lon: data::GeoDeg::from(14.208), lat: data::GeoDeg::from(13.042) },
+            data::Site { id: 3989691, lon: data::GeoDeg::from(14.292), lat: data::GeoDeg::from(13.042) },
+            data::Site { id: 3989692, lon: data::GeoDeg::from(14.375), lat: data::GeoDeg::from(13.042) },
+            data::Site { id: 3989693, lon: data::GeoDeg::from(14.458), lat: data::GeoDeg::from(13.042) },
+            data::Site { id: 3994009, lon: data::GeoDeg::from(14.125), lat: data::GeoDeg::from(12.958) },
+            data::Site { id: 3994010, lon: data::GeoDeg::from(14.208), lat: data::GeoDeg::from(12.958) },
+            data::Site { id: 3994011, lon: data::GeoDeg::from(14.292), lat: data::GeoDeg::from(12.958) },
+            data::Site { id: 3994012, lon: data::GeoDeg::from(14.375), lat: data::GeoDeg::from(12.958) },
+            data::Site { id: 3994013, lon: data::GeoDeg::from(14.458), lat: data::GeoDeg::from(12.958) },
+            data::Site { id: 3998329, lon: data::GeoDeg::from(14.125), lat: data::GeoDeg::from(12.875) },
+            data::Site { id: 3998330, lon: data::GeoDeg::from(14.208), lat: data::GeoDeg::from(12.875) },
+            data::Site { id: 3998331, lon: data::GeoDeg::from(14.292), lat: data::GeoDeg::from(12.875) },
+            data::Site { id: 3998332, lon: data::GeoDeg::from(14.375), lat: data::GeoDeg::from(12.875) },
+            data::Site { id: 3998333, lon: data::GeoDeg::from(14.458), lat: data::GeoDeg::from(12.875) },
+            data::Site { id: 3998334, lon: data::GeoDeg::from(14.542), lat: data::GeoDeg::from(12.875) },
+            data::Site { id: 4002650, lon: data::GeoDeg::from(14.208), lat: data::GeoDeg::from(12.792) },
+            data::Site { id: 4002651, lon: data::GeoDeg::from(14.292), lat: data::GeoDeg::from(12.792) },
+            data::Site { id: 4002652, lon: data::GeoDeg::from(14.375), lat: data::GeoDeg::from(12.792) },
+            data::Site { id: 4002653, lon: data::GeoDeg::from(14.458), lat: data::GeoDeg::from(12.792) },
         ];
         
         let len = expected.len();
-        
-        let mut min_lon: f64 = 180.0;
-        let mut max_lon: f64 = -180.0;
-        let mut min_lat: f64 = 90.0;
-        let mut max_lat: f64 = -90.0;
-        
+
+        let mut min_lon: f32 = 180.0;
+        let mut max_lon: f32 = -180.0;
+        let mut min_lat: f32 = 90.0;
+        let mut max_lat: f32 = -90.0;
+
         let mut i = 0;
         for site in gen {
             if i < len {
                 assert_eq!(site, expected[i]);
             }
-            
-            min_lon = min_lon.min(site.lon);
-            max_lon = max_lon.max(site.lon);
-            min_lat = min_lat.min(site.lat);
-            max_lat = max_lat.max(site.lat);
+
+            min_lon = min_lon.min(site.lon.as_f32());
+            max_lon = max_lon.max(site.lon.as_f32());
+            min_lat = min_lat.min(site.lat.as_f32());
+            max_lat = max_lat.max(site.lat.as_f32());
             i += 1;
         }
         
