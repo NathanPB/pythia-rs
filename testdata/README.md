@@ -24,3 +24,29 @@ zip -j DSSAT-Soils.shp.zip DSSAT-Soils/*
 ```
 
 The final file is `DSSAT-Soils.shp.zip`.
+
+## `DSSAT-Soils.tif`
+
+Rasterized version of [DSSAT-Soils.shp.zip](#dssat-soilsshpzip)
+
+### Steps to create
+
+2. Rasterize it using GDAL:
+
+```sh
+gdal_rasterize -a CELL5M -tr 0.0833 0.0833 -ot Int32 -of GTiff /vsizip/DSSAT-Soils.shp.zip DSSAT-Soils.tif
+```
+
+The final file is `DSSAT-Soils.tif`.
+
+> **Note:** In the case of this example file, the resolution is known to be 5 arc-minute (stated in the dataset description), so the -tr flag values are set to 0.0833. For other resolutions, the values may need to be adjusted.
+>
+> Ideal pixel size formula:
+> ```
+> Pixel Size (X) = (max_x - min_x) / sqrt(N)
+> Pixel Size (Y) = (max_y - min_y) / sqrt(N)
+> where max_x, min_x, max_y, min_y = the bounding box coordinates; (ogrinfo -al -so DSSAT-Soils.shp.zip | grep "Extent");
+>       N = total number of points (ogrinfo -al -so DSSAT-Soils.shp.zip | grep "Feature Count").
+> ```
+> 
+> Irregular shapes might lead to a less precise pixel size, so manual intervention might be necessary.
