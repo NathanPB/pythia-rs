@@ -5,8 +5,9 @@ use gdal::vector::{Feature, LayerAccess, FeatureIterator, Layer};
 use crate::data::data;
 
 /// SiteGenerator allows for streaming Sites from an undetermined source.
-pub trait SiteGenerator: Iterator<Item = data::Site> {}
-impl<T: Iterator<Item = data::Site>> SiteGenerator for T {}
+/// The order of the sites is not guaranteed, as different file formats may index their data differently, and pre-sorting is not possible.
+pub trait SiteGenerator: Iterator<Item=data::Site> {}
+impl<T: Iterator<Item=data::Site>> SiteGenerator for T {}
 
 
 /// Implementation of SiteGenerator that allows streaming from a GDAL vector dataset.
