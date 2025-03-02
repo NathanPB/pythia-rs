@@ -1,6 +1,7 @@
 mod config;
 mod data;
 mod io;
+mod processing;
 
 fn main() {
     let cfg_result = config::init();

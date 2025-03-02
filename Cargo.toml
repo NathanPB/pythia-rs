@@ -8,4 +8,5 @@ gdal = { version = "0.17.1", features = ["bindgen"] }
 clap = { version = "4.5.29", features = ["derive"] }
 serde = { version = "1.0", features = ["derive"] }
 validator = { version = "0.20.0", features = ["derive"] }
+serde-inline-default = "0.2.3"
 serde_json = "1.0"

@@ -70,3 +70,9 @@ pub struct Site {
     pub lon: GeoDeg,
     pub lat: GeoDeg,
 }
+
+/// Holds the information about the execution of a single run on a specific site.
+#[derive(Debug, Clone)]
+pub struct Context {
+    pub site: Site,
+}
