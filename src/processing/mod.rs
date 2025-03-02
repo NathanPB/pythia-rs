@@ -1,16 +1,27 @@
 use crate::config;
-use crate::data::Context;
+use crate::data::{Context, Site};
 use crate::io::sitegen::{RasterSiteGenerator, SiteGenerator, VectorSiteGenerator};
 
 /// Given a site source configuration, ContextGenerator will generate a sequence of Contexts to be processed.
 ///
+/// The order of the generated Contexts is determined by a permutation over the runs and the sites iterator,
+/// prioritizing outputting all the runs before moving to the next site.
+///
 /// TODO: decouple from config. Maybe create a registry for SiteGenerators (abstract factory?) and couple it with config instead. Will allow for plugin extensibility later.
 struct ContextGenerator {
     site_generator: Box<dyn SiteGenerator>,
+    curr_site: Option<Site>,
+
+    runs: Vec<config::RunConfig>,
+    current_run: usize,
 }
 
 impl ContextGenerator {
-    pub fn new(site_src_config: config::SitesSource) -> Result<Self, Box<dyn std::error::Error>> {
+    /// Creates a new ContextGenerator from a SitesSource configuration and a vector of RunConfig.
+    pub fn new(
+        site_src_config: config::SitesSource,
+        runs: Vec<config::RunConfig>,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
         let site_generator: Box<dyn SiteGenerator> = match site_src_config.clone() {
             config::SitesSource::Vector(cfg) => Box::new(VectorSiteGenerator::new(
                 cfg.file.as_str(),
@@ -22,7 +33,12 @@ impl ContextGenerator {
             )?),
         };
 
-        Ok(ContextGenerator { site_generator })
+        Ok(ContextGenerator {
+            site_generator,
+            curr_site: None,
+            runs,
+            current_run: 0,
+        })
     }
 }
 
@@ -30,7 +46,24 @@ impl Iterator for ContextGenerator {
     type Item = Context;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.site_generator.next().map(|site| Context { site })
+        if self.current_run >= self.runs.len() {
+            self.current_run = 0;
+            self.curr_site = None;
+        }
+
+        if self.curr_site.is_none() {
+            self.curr_site = self.site_generator.next();
+            if self.curr_site.is_none() {
+                return None;
+            }
+        }
+
+        let run = self.runs[self.current_run].clone();
+        self.current_run += 1;
+        Some(Context {
+            site: self.curr_site.clone()?,
+            run,
+        })
     }
 }
 
@@ -38,15 +71,34 @@ impl Iterator for ContextGenerator {
 mod tests {
     use crate::config;
     use crate::processing::ContextGenerator;
+    use std::collections::HashMap;
 
     fn generic_test(config: config::SitesSource, expected_sites: &[i32]) {
-        let generator = ContextGenerator::new(config).unwrap();
+        let runs = vec![
+            config::RunConfig {
+                name: String::from("r1"),
+                extra: HashMap::new(),
+            },
+            config::RunConfig {
+                name: String::from("r2"),
+                extra: HashMap::new(),
+            },
+        ];
+
+        let generator = ContextGenerator::new(config, runs).unwrap();
         let mut min = i32::max_value();
         let mut max = i32::min_value();
 
         for (i, ctx) in generator.enumerate() {
-            if i < expected_sites.len() {
-                assert_eq!(ctx.site.id, expected_sites[i])
+            let site_idx = i / 2;
+            if site_idx < expected_sites.len() {
+                assert_eq!(ctx.site.id, expected_sites[site_idx])
+            }
+
+            if i % 2 == 0 {
+                assert_eq!(ctx.run.name, "r1");
+            } else {
+                assert_eq!(ctx.run.name, "r2");
             }
 
             min = min.min(ctx.site.id);

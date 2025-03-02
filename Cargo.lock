@@ -638,6 +638,7 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "gdal",
+ "regex",
  "serde",
  "serde-inline-default",
  "serde_json",

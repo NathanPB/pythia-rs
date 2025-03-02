@@ -1,3 +1,5 @@
+use crate::config;
+
 const GEO_DEG_PRECISION: f64 = 100_000.0;
 
 /// Type that represents a latitude or longitude in degrees. It holds coordinates with a fixed precision of up to 5 decimal places.
@@ -71,8 +73,9 @@ pub struct Site {
     pub lat: GeoDeg,
 }
 
-/// Holds the information about the execution of a single run on a specific site.
+/// Holds the information about the execution of a single run on a specific site with its bound run configurations.
 #[derive(Debug, Clone)]
 pub struct Context {
     pub site: Site,
+    pub run: config::RunConfig,
 }

@@ -1,9 +1,32 @@
 use clap::Parser;
-use serde::Deserialize;
+use regex::Regex;
+use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
+use std::borrow::Cow;
+use std::collections::HashSet;
 use std::error::Error;
 use std::path::PathBuf;
-use validator::Validate;
+use std::sync::LazyLock;
+use validator::{Validate, ValidationError};
+
+static ERRCODE_RUN_NAME_DUPE: &str = "ERRCODE_RUN_NAME_DUPE";
+
+static RE_VALID_RUN_NAME: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^[a-zA-Z0-9_-]+$").unwrap());
+
+fn validate_unique_run_names(runs: &Vec<RunConfig>) -> Result<(), ValidationError> {
+    let mut run_names = HashSet::new();
+
+    for run in runs {
+        if run_names.contains(&run.name) {
+            let msg = format!("Run name {} is not unique", run.name);
+            return Err(ValidationError::new(ERRCODE_RUN_NAME_DUPE).with_message(Cow::from(msg)));
+        }
+        run_names.insert(run.name.clone());
+    }
+
+    Ok(())
+}
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -20,6 +43,11 @@ pub struct Args {
 #[derive(Validate, Deserialize, Clone, Debug)]
 pub struct Config {
     pub sites: SitesSource,
+
+    #[validate(length(min = 1, message = "At least one run is required"))]
+    #[validate(nested)]
+    #[validate(custom(function = "validate_unique_run_names"))]
+    pub runs: Vec<RunConfig>,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -47,6 +75,12 @@ pub struct RasterSitesSourceConfig {
 
     #[serde_inline_default(0)]
     pub layer_index: usize,
+}
+
+#[derive(Validate, Serialize, Deserialize, Clone, Debug)]
+pub struct RunConfig {
+    #[validate(regex(path = *RE_VALID_RUN_NAME, message = "Run name must be alphanumeric and contain only underscores and dashes"))]
+    pub name: String,
 }
 
 fn validate(_: &Args, config: &Config) -> Result<(), Box<dyn Error>> {
