@@ -18,7 +18,7 @@ use std::error::Error;
 use std::sync::LazyLock;
 
 /// Validates if the given string is a valid name/id for a [`Namespace`] or [`Identifier`].
-static RE_VALID_NAMESPACE_AND_ID: LazyLock<regex::Regex> =
+static RE_VALID_NAMESPACE_OR_ID: LazyLock<regex::Regex> =
     LazyLock::new(|| regex::Regex::new(r"^[a-z0-9]-+$").unwrap());
 
 /// A namespace is a name that is used to group [`Identifier`]s. It effectively owns the resources that are registered on the [`Registry`].
@@ -29,7 +29,7 @@ pub struct Namespace {
 
 impl Namespace {
     /// Creates a new [`Identifier`] under the current namespace with the given `id`.
-    /// Due to ergonomics, this doesn't check the `id` formatting (see [`RE_VALID_NAMESPACE_AND_ID`]). Instead, the value is checked when written to the [`Registry`].
+    /// Due to ergonomics, this doesn't check the `id` formatting (see [`RE_VALID_NAMESPACE_OR_ID`]). Instead, the value is checked when written to the [`Registry`].
     pub fn id(&self, id: &str) -> Identifier {
         Identifier {
             namespace: self.clone(),
@@ -85,12 +85,12 @@ impl<T: Resource> Registry<T> {
 
     /// Registers a [`Resource`] `resource` under the given [`Identifier`] `id`.
     /// Will throw:
-    /// - [`IllegalNameError`] if `id` is not a valid name (see [`RE_VALID_NAMESPACE_AND_ID`]).
+    /// - [`IllegalNameError`] if `id` is not a valid name (see [`RE_VALID_NAMESPACE_OR_ID`]).
     /// - [`AlreadyRegisteredError`] if `id` is already registered.
     ///
     /// Returns itself on success, for convenience.
     pub fn register(&mut self, id: &Identifier, resource: T) -> Result<&mut Self, Box<dyn Error>> {
-        if !RE_VALID_NAMESPACE_AND_ID.is_match(id.id.as_str()) {
+        if !RE_VALID_NAMESPACE_OR_ID.is_match(id.id.as_str()) {
             return Err(Box::new(IllegalNameError(id.id.clone())));
         }
 
@@ -185,7 +185,7 @@ impl Registries {
         &mut self,
         namespace: &'static str,
     ) -> Result<Namespace, Box<dyn Error>> {
-        if !RE_VALID_NAMESPACE_AND_ID.is_match(namespace) {
+        if !RE_VALID_NAMESPACE_OR_ID.is_match(namespace) {
             return Err(Box::new(IllegalNameError(namespace.to_string())));
         }
 
