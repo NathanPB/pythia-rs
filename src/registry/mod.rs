@@ -9,17 +9,34 @@
 
 pub mod error;
 pub mod itself;
-mod resources;
+pub mod resources;
 
 use crate::utils::threehashmap::K2HashMap;
 use error::*;
+use resources::*;
 use std::collections::HashSet;
 use std::error::Error;
 use std::sync::LazyLock;
 
 /// Validates if the given string is a valid name/id for a [`Namespace`] or [`Identifier`].
 static RE_VALID_NAMESPACE_OR_ID: LazyLock<regex::Regex> =
-    LazyLock::new(|| regex::Regex::new(r"^[a-z0-9]-+$").unwrap());
+    LazyLock::new(|| regex::Regex::new(r"^[a-z0-9-]+$").unwrap());
+
+/// Validates if the given string represents a valid namespace and id in the format `namespace:id`.
+/// The namespace can be omitted, in which case the default namespace is assumed.
+/// E.g.
+/// - `foo:bar`     -> Namespace=``foo``, Id=``bar``
+/// - `bar`         -> Namespace=<default>, Id=``bar``
+/// - `foo:bar:baz` -> Invalid
+/// - `foo:`        -> Invalid
+/// - `:bar`        -> Invalid
+/// - `:`           -> Invalid
+/// Any other permutation of Namespace or Id that doesn't match [`RE_VALID_NAMESPACE_OR_ID`] is invalid.
+/// E.g. `FOO:b@r`  -> Invalid (uppercase or symbols are not allowed)
+///
+/// Namespace is captured in the group named `ns` and Id is captured in the group named `id`.
+pub static RE_VALID_NAMESPACE_AND_ID: LazyLock<regex::Regex> =
+    LazyLock::new(|| regex::Regex::new(r"^(?:(?<ns>[a-z0-9._-]+):)?(?<id>[a-z0-9._-]+)$").unwrap());
 
 /// A namespace is a name that is used to group [`Identifier`]s. It effectively owns the resources that are registered on the [`Registry`].
 #[derive(Debug, Hash, Clone, Eq, PartialEq)]
@@ -35,6 +52,11 @@ impl Namespace {
             namespace: self.clone(),
             id: id.to_string(),
         }
+    }
+
+    /// Gets the namespace string.
+    pub fn namespace(&self) -> &str {
+        &self.namespace
     }
 }
 
@@ -59,7 +81,7 @@ impl std::fmt::Display for Identifier {
 }
 
 /// Used to define valid resources that can be registered on the [`Registry`].
-pub trait Resource {
+pub trait Resource: Sized {
     /// Simply a (questionable) alias for [`Registry::register`].
     fn register<T: Resource>(
         registry: &mut Registry<T>,
@@ -165,6 +187,7 @@ impl<T: Resource> Registry<T> {
 /// It also manages claiming of [`Namespace`]s (see [`Registries::claim_namespace`]).
 pub struct Registries {
     namespaces: HashSet<Namespace>,
+    reg_sitegen_drivers: Registry<SiteGeneratorDriverResource>,
 }
 
 impl Registries {
@@ -172,6 +195,7 @@ impl Registries {
     pub fn new() -> Self {
         Self {
             namespaces: HashSet::new(),
+            reg_sitegen_drivers: Registry::new(),
         }
     }
 
@@ -198,6 +222,10 @@ impl Registries {
 
         self.namespaces.insert(namespace.clone());
         Ok(namespace)
+    }
+
+    pub fn reg_sitegen_drivers(&mut self) -> &mut Registry<SiteGeneratorDriverResource> {
+        &mut self.reg_sitegen_drivers
     }
 }
 

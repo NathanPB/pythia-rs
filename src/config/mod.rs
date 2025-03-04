@@ -1,12 +1,14 @@
 pub mod runs;
 pub mod sites;
 
+use crate::config::sites::SiteSourceConfig;
 use clap::Parser;
-use serde::{Deserialize, Serialize};
+use runs::*;
+use serde::Deserialize;
+use serde_inline_default::serde_inline_default;
 use std::error::Error;
 use std::path::PathBuf;
 use validator::Validate;
-use {runs::*, sites::*};
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -20,9 +22,10 @@ pub struct Args {
     pub workers: u16,
 }
 
+#[serde_inline_default]
 #[derive(Validate, Deserialize, Clone, Debug)]
 pub struct Config {
-    pub sites: SitesSource,
+    sites: SiteSourceConfig,
 
     #[validate(length(min = 1, message = "At least one run is required"))]
     #[validate(nested)]

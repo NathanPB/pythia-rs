@@ -3,6 +3,7 @@ mod data;
 mod io;
 mod processing;
 mod registry;
+mod sites;
 mod utils;
 
 use registry::{itself::init_itself, Registries};

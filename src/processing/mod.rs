@@ -1,6 +1,6 @@
 use crate::config;
 use crate::data::{Context, Site};
-use crate::io::sitegen::{RasterSiteGenerator, SiteGenerator, VectorSiteGenerator};
+use crate::io::sitegen::SiteGenerator;
 
 /// Given a site source configuration, ContextGenerator will generate a sequence of Contexts to be processed.
 ///
@@ -8,7 +8,7 @@ use crate::io::sitegen::{RasterSiteGenerator, SiteGenerator, VectorSiteGenerator
 /// prioritizing outputting all the runs before moving to the next site.
 ///
 /// TODO: decouple from config. Maybe create a registry for SiteGenerators (abstract factory?) and couple it with config instead. Will allow for plugin extensibility later.
-struct ContextGenerator {
+pub struct ContextGenerator {
     site_generator: Box<dyn SiteGenerator>,
     curr_site: Option<Site>,
 
@@ -19,20 +19,9 @@ struct ContextGenerator {
 impl ContextGenerator {
     /// Creates a new ContextGenerator from a SitesSource configuration and a vector of RunConfig.
     pub fn new(
-        site_src_config: config::sites::SitesSource,
+        site_generator: Box<dyn SiteGenerator>,
         runs: Vec<config::runs::RunConfig>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        let site_generator: Box<dyn SiteGenerator> = match site_src_config.clone() {
-            config::sites::SitesSource::Vector(cfg) => Box::new(VectorSiteGenerator::new(
-                cfg.file.as_str(),
-                cfg.site_id_key,
-            )?),
-            config::sites::SitesSource::Raster(cfg) => Box::new(RasterSiteGenerator::new(
-                cfg.file.as_str(),
-                cfg.layer_index,
-            )?),
-        };
-
         Ok(ContextGenerator {
             site_generator,
             curr_site: None,
@@ -70,10 +59,12 @@ impl Iterator for ContextGenerator {
 #[cfg(test)]
 mod tests {
     use crate::config;
+    use crate::io::sitegen::{RasterSiteGenerator, SiteGenerator, VectorSiteGenerator};
     use crate::processing::ContextGenerator;
     use std::collections::HashMap;
 
-    fn generic_test(config: config::sites::SitesSource, expected_sites: &[i32]) {
+    // TODO mock a site generator. We are not testing site generators here, so there is little point in using real ones.
+    fn generic_test(site_src: Box<dyn SiteGenerator>, expected_sites: &[i32]) {
         let runs = vec![
             config::runs::RunConfig {
                 name: String::from("r1"),
@@ -85,7 +76,7 @@ mod tests {
             },
         ];
 
-        let generator = ContextGenerator::new(config, runs).unwrap();
+        let generator = ContextGenerator::new(site_src, runs).unwrap();
         let mut min = i32::max_value();
         let mut max = i32::min_value();
 
@@ -111,10 +102,8 @@ mod tests {
 
     #[test]
     fn test_context_generator_vector() {
-        let config = config::sites::SitesSource::Vector(config::sites::VectorSitesSourceConfig {
-            file: "testdata/DSSAT-Soils.shp.zip".to_string(),
-            site_id_key: "CELL5M".to_string(),
-        });
+        let site_src =
+            VectorSiteGenerator::new("testdata/DSSAT-Soils.shp.zip", "CELL5M".to_string()).unwrap();
 
         let expected_sites = vec![
             3989689, 3989690, 3989691, 3989692, 3989693, 3994009, 3994010, 3994011, 3994012,
@@ -129,15 +118,12 @@ mod tests {
             3903266, 3903267, 3903268, 3903269, 3903271, 3903273, 3903274, 3903279, 3903280,
         ];
 
-        generic_test(config, &expected_sites);
+        generic_test(Box::new(site_src), &expected_sites);
     }
 
     #[test]
     fn test_context_generator_raster() {
-        let config = config::sites::SitesSource::Raster(config::sites::RasterSitesSourceConfig {
-            file: "testdata/DSSAT-Soils.tif".to_string(),
-            layer_index: 0,
-        });
+        let site_src = RasterSiteGenerator::new("testdata/DSSAT-Soils.tif", 0).unwrap();
 
         let expected_sites = vec![
             3894630, 3898947, 3898948, 3898949, 3898975, 3898976, 3903264, 3903265, 3903266,
@@ -152,6 +138,6 @@ mod tests {
             3911935, 3911936, 3911937, 3911938, 3911939, 3916224, 3916225, 3916226, 3916227,
         ];
 
-        generic_test(config, &expected_sites);
+        generic_test(Box::new(site_src), &expected_sites);
     }
 }
