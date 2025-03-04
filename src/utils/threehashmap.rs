@@ -1,4 +1,4 @@
-///! TODO: Rename mod and reexport from the super module.
+//! TODO: Rename mod and reexport from the super module.
 use std::collections::HashMap;
 use std::hash::Hash;
 
@@ -19,6 +19,7 @@ where
         }
     }
 
+    #[allow(clippy::unwrap_or_default)] // .or_insert_with() is used on purpose, as we want to actually insert a blank hashmap into the root hashmap if it doesn't already exist in the given key.
     pub fn insert(&mut self, key1: K1, key2: K2, value: V) {
         self.map
             .entry(key1)

@@ -21,6 +21,7 @@ pub struct SiteSourceConfig {
 }
 
 impl Config {
+    #[allow(dead_code)] // The functionality required by this haven't made its way into the entrypoint yet, but this fn definitely isn't dead code.
     pub fn sites(
         &self,
         default_namespace: &Namespace,
@@ -33,7 +34,7 @@ impl Config {
         let namespace = captures
             .name("ns")
             .map(|m| m.as_str())
-            .unwrap_or(&default_namespace.namespace());
+            .unwrap_or(default_namespace.namespace());
 
         let id = captures.name("id").map(|m| m.as_str()).unwrap(); // I'm sure that "id" exists. If it doesn't, it's a good reason to panic.
 

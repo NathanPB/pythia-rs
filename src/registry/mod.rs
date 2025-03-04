@@ -31,8 +31,9 @@ static RE_VALID_NAMESPACE_OR_ID: LazyLock<regex::Regex> =
 /// - `foo:`        -> Invalid
 /// - `:bar`        -> Invalid
 /// - `:`           -> Invalid
-/// Any other permutation of Namespace or Id that doesn't match [`RE_VALID_NAMESPACE_OR_ID`] is invalid.
-/// E.g. `FOO:b@r`  -> Invalid (uppercase or symbols are not allowed)
+///   Any other permutation of Namespace or Id that doesn't match [`RE_VALID_NAMESPACE_OR_ID`] is invalid.
+///
+///   E.g. `FOO:b@r`  -> Invalid (uppercase or symbols are not allowed)
 ///
 /// Namespace is captured in the group named `ns` and Id is captured in the group named `id`.
 pub static RE_VALID_NAMESPACE_AND_ID: LazyLock<regex::Regex> =
@@ -102,6 +103,7 @@ impl<T: Resource> Registry<T> {
     /// - [`AlreadyRegisteredError`] if `id` is already registered.
     ///
     /// Returns itself on success, for convenience.
+    #[allow(dead_code)]
     pub fn register(&mut self, id: &Identifier, resource: T) -> Result<&mut Self, Box<dyn Error>> {
         if !RE_VALID_NAMESPACE_OR_ID.is_match(id.id.as_str()) {
             return Err(Box::new(IllegalNameError(id.id.clone())));
@@ -117,22 +119,26 @@ impl<T: Resource> Registry<T> {
     }
 
     /// Checks if there is something registered under the given [`Identifier`].
+    #[allow(dead_code)]
     pub fn is_registered(&self, id: &Identifier) -> bool {
         self.map
             .contains_key(&id.namespace.namespace.clone(), &id.id.clone())
     }
 
     /// Returns the [`Resource`] registered under the given [`Identifier`], if any.
+    #[allow(dead_code)]
     pub fn get(&self, id: &Identifier) -> Option<&T> {
         self.get_foreign(id.namespace.namespace.as_str(), id.id.as_str())
     }
 
     /// Returns the [`Resource`] registered under the ``namespace`` and ``id``, if any.
+    #[allow(dead_code)]
     pub fn get_foreign(&self, namespace: &str, id: &str) -> Option<&T> {
         self.map.get(&namespace.to_string(), &id.to_string())
     }
 
     /// Returns the [`Identifier`] of all registered [`Resource`]s.
+    #[allow(dead_code)]
     pub fn ids(&self) -> Vec<Identifier> {
         self.map
             .keys()
@@ -146,11 +152,13 @@ impl<T: Resource> Registry<T> {
     }
 
     /// Returns all registered [`Resource`]s.
+    #[allow(dead_code)]
     pub fn resources(&self) -> Vec<&T> {
         self.map.values().collect()
     }
 
     /// Returns all registered [`Resource`]s and their [`Identifier`]s.
+    #[allow(dead_code)]
     pub fn entries(&self) -> Vec<(Identifier, &T)> {
         self.map
             .iter()
@@ -169,6 +177,7 @@ impl<T: Resource> Registry<T> {
     }
 
     /// Returns the number of registered [`Resource`]s.
+    #[allow(dead_code)]
     pub fn len(&self) -> usize {
         self.map.len()
     }

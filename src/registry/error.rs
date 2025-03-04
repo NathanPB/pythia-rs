@@ -14,7 +14,10 @@ impl Display for AlreadyRegisteredError {
 }
 
 #[derive(Debug)]
-pub struct NamespaceAlreadyClaimedError(pub Namespace);
+pub struct NamespaceAlreadyClaimedError(
+    #[allow(dead_code)] // This is part of the public API, so it's not dead code.
+    pub  Namespace,
+);
 
 impl Error for NamespaceAlreadyClaimedError {}
 
@@ -25,7 +28,10 @@ impl Display for NamespaceAlreadyClaimedError {
 }
 
 #[derive(Debug)]
-pub struct IllegalNameError(pub String);
+pub struct IllegalNameError(
+    #[allow(dead_code)] // This is part of the public API, so it's not dead code.
+    pub  String,
+);
 
 impl Error for IllegalNameError {}
 

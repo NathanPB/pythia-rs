@@ -8,11 +8,13 @@ pub struct GeoDeg(f32);
 
 impl GeoDeg {
     /// Returns the value of the GeoDeg as f64.
+    #[allow(dead_code)] // This is part of the public API, so it's not dead code.
     pub fn as_f64(self) -> f64 {
         self.0 as f64
     }
 
     /// Returns the value of the GeoDeg as f32.
+    #[allow(dead_code)] // This is part of the public API, so it's not dead code.
     pub fn as_f32(self) -> f32 {
         self.0
     }
@@ -76,6 +78,11 @@ pub struct Site {
 /// Holds the information about the execution of a single run on a specific site with its bound run configurations.
 #[derive(Debug, Clone)]
 pub struct Context {
+    #[allow(dead_code)]
+    // The part of the code that uses this is not yet implemented, so it's not dead code.
     pub site: Site,
+
+    #[allow(dead_code)]
+    // The part of the code that uses this is not yet implemented, so it's not dead code.
     pub run: config::runs::RunConfig,
 }

@@ -50,7 +50,7 @@ impl std::fmt::Display for ConfigFileNotFoundError {
     }
 }
 
-pub fn init<'a>() -> Result<(Config, Args, PathBuf), Box<dyn Error>> {
+pub fn init() -> Result<(Config, Args, PathBuf), Box<dyn Error>> {
     let args = Args::parse();
     let path = PathBuf::from(&args.config_file.clone());
     if !path.exists() || !path.is_file() {

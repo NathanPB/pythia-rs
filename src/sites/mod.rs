@@ -7,15 +7,22 @@ use std::any::Any;
 use std::error::Error;
 use std::sync::Arc;
 
+/// Constructs a new [`SiteGenerator`] of type [`G`] from the config [`C`].
+#[allow(type_alias_bounds)] // I prefer to keep the constraint here for when this makes its way into stable Rust.
+type SitegenFactory<G: SiteGenerator, C> = Arc<Box<dyn Fn(C) -> Result<G, Box<dyn Error>>>>;
+
+/// Deserializes a config of type [`C`] from a [`serde_json::Value`].
+type SitegenConfigDeserializer<C> =
+    Arc<Box<dyn Fn(serde_json::Value) -> Result<C, serde_json::error::Error>>>;
+
 /// SiteGenerator allows for streaming Sites from an undetermined source.
 /// The order of the sites is not guaranteed, as different file formats may index their data differently, and pre-sorting is not possible.
 pub trait SiteGenerator: Iterator<Item = Site> {}
 impl<T: Iterator<Item = Site>> SiteGenerator for T {}
 
 pub struct SiteGeneratorDriver<G: SiteGenerator, C> {
-    pub create: Arc<Box<dyn Fn(C) -> Result<G, Box<dyn Error>>>>,
-    pub config_deserializer:
-        Arc<Box<dyn Fn(serde_json::Value) -> Result<C, serde_json::error::Error>>>,
+    pub create: SitegenFactory<G, C>,
+    pub config_deserializer: SitegenConfigDeserializer<C>,
 }
 
 impl<G: SiteGenerator, C> Clone for SiteGeneratorDriver<G, C> {

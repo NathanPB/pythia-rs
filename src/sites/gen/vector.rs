@@ -22,7 +22,7 @@ pub struct VectorSiteGenerator {
     feat_iter: Box<Option<FeatureIterator<'static>>>,
 }
 
-impl<'a> VectorSiteGenerator {
+impl VectorSiteGenerator {
     /// Constructs a new VectorSiteGenerator from a GDAL vector dataset.
     /// Parameter "path" is the GDAL-valid path to the dataset.
     /// Parameter "site_id_key" is the name of the field in the dataset that contains the site ID. Must be an int32, otherwise the feature is skipped.
@@ -47,9 +47,14 @@ impl Iterator for VectorSiteGenerator {
                 .ds
                 .layer(self.curr_layer)
                 .ok()
-                .map(|l| unsafe { std::mem::transmute(l) });
+                .map(|l| unsafe { std::mem::transmute::<Layer, Layer<'static>>(l) });
+
             if let Some(layer) = self.layer.as_mut() {
-                self.feat_iter = Box::new(Some(unsafe { std::mem::transmute(layer.features()) }));
+                self.feat_iter = Box::new(Some(unsafe {
+                    std::mem::transmute::<FeatureIterator, FeatureIterator<'static>>(
+                        layer.features(),
+                    )
+                }));
                 return self.next();
             }
             return None;
