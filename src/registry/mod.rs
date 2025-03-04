@@ -81,16 +81,7 @@ impl std::fmt::Display for Identifier {
 }
 
 /// Used to define valid resources that can be registered on the [`Registry`].
-pub trait Resource: Sized {
-    /// Simply a (questionable) alias for [`Registry::register`].
-    fn register<T: Resource>(
-        registry: &mut Registry<T>,
-        id: &Identifier,
-        resource: T,
-    ) -> Result<(), Box<dyn Error>> {
-        registry.register(id, resource).map(|_| ())
-    }
-}
+pub trait Resource: Sized {}
 
 /// Stores [`Resource`]s, identified by [`Identifier`], and provides basic operations on them.
 pub struct Registry<T: Resource> {
