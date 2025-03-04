@@ -1,3 +1,4 @@
+///! TODO: Rename mod and reexport from the super module.
 use std::collections::HashMap;
 use std::hash::Hash;
 
@@ -70,7 +71,7 @@ mod tests {
         map.insert("k2", "kC", 30);
 
         assert_eq!(map.get(&"k1", &"kA"), Some(&10));
-        assert_eq!(map.get(&"k1", &"k"), Some(&20));
+        assert_eq!(map.get(&"k1", &"kB"), Some(&20));
         assert_eq!(map.get(&"k2", &"kC"), Some(&30));
     }
 }
