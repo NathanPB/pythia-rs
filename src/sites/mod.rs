@@ -1,10 +1,16 @@
 pub mod config;
 pub mod drivers;
+pub mod gen;
 
-use crate::io::sitegen::*;
+use crate::data::Site;
 use std::any::Any;
 use std::error::Error;
 use std::sync::Arc;
+
+/// SiteGenerator allows for streaming Sites from an undetermined source.
+/// The order of the sites is not guaranteed, as different file formats may index their data differently, and pre-sorting is not possible.
+pub trait SiteGenerator: Iterator<Item = Site> {}
+impl<T: Iterator<Item = Site>> SiteGenerator for T {}
 
 pub struct SiteGeneratorDriver<G: SiteGenerator, C> {
     pub create: Arc<Box<dyn Fn(C) -> Result<G, Box<dyn Error>>>>,

@@ -6,11 +6,6 @@ use gdal::{Dataset, GeoTransformEx};
 use std::fmt;
 use std::rc::Rc;
 
-/// SiteGenerator allows for streaming Sites from an undetermined source.
-/// The order of the sites is not guaranteed, as different file formats may index their data differently, and pre-sorting is not possible.
-pub trait SiteGenerator: Iterator<Item = Site> {}
-impl<T: Iterator<Item = Site>> SiteGenerator for T {}
-
 /// Implementation of SiteGenerator that allows streaming from a GDAL vector dataset.
 /// Example usage with https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/1PEEY0:
 /// ```rs

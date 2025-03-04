@@ -1,6 +1,6 @@
 use crate::config;
 use crate::data::{Context, Site};
-use crate::io::sitegen::SiteGenerator;
+use crate::sites::SiteGenerator;
 
 /// Given a site source configuration, ContextGenerator will generate a sequence of Contexts to be processed.
 ///
@@ -59,8 +59,9 @@ impl Iterator for ContextGenerator {
 #[cfg(test)]
 mod tests {
     use crate::config;
-    use crate::io::sitegen::{RasterSiteGenerator, SiteGenerator, VectorSiteGenerator};
     use crate::processing::ContextGenerator;
+    use crate::sites::gen::{RasterSiteGenerator, VectorSiteGenerator};
+    use crate::sites::SiteGenerator;
     use std::collections::HashMap;
 
     // TODO mock a site generator. We are not testing site generators here, so there is little point in using real ones.

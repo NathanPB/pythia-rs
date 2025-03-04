@@ -1,7 +1,7 @@
 use crate::config::Config;
-use crate::io::sitegen::SiteGenerator;
 use crate::registry::resources::SiteGeneratorDriverResource;
 use crate::registry::{Namespace, Registry, RE_VALID_NAMESPACE_AND_ID};
+use crate::sites::SiteGenerator;
 use serde::Deserialize;
 use std::error::Error;
 use validator::Validate;

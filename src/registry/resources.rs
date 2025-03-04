@@ -1,5 +1,5 @@
-use crate::io::sitegen::SiteGenerator;
 use crate::registry::Resource;
+use crate::sites::SiteGenerator;
 use crate::sites::SiteGeneratorDriver;
 use std::any::Any;
 

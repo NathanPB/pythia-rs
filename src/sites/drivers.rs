@@ -1,6 +1,6 @@
 use super::config::*;
 use super::SiteGeneratorDriver;
-use crate::io::sitegen::*; // TODO move sitegen to sites::gen
+use crate::sites::gen::*; // TODO move sitegen to sites::gen
 use std::sync::{Arc, LazyLock};
 
 pub const DRIVER_VECTOR: LazyLock<
