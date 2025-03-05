@@ -117,7 +117,6 @@ mod tests {
     fn test_vector_site_generator() {
         let gen =
             VectorSiteGenerator::new("testdata/DSSAT-Soils.shp.zip", "CELL5M".to_string()).unwrap();
-        let i = 0;
 
         let expected = vec![
             Site {

@@ -191,7 +191,6 @@ mod tests {
     fn test_raster_site_generator() {
         let gen = RasterSiteGenerator::new("testdata/DSSAT-Soils.tif", 0).unwrap();
 
-        let i = 0;
         let expected = vec![
             Site {
                 id: 3894630,
