@@ -19,7 +19,7 @@ pub struct Args {
 
     /// Number of workers to use for parallel processing. If 0, will use all available cores.
     #[arg(short, long, default_value_t = 0)]
-    pub workers: u16,
+    pub workers: usize,
 }
 
 #[serde_inline_default]

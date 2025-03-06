@@ -21,7 +21,6 @@ pub struct SiteSourceConfig {
 }
 
 impl Config {
-    #[allow(dead_code)] // The functionality required by this haven't made its way into the entrypoint yet, but this fn definitely isn't dead code.
     pub fn sites(
         &self,
         default_namespace: &Namespace,

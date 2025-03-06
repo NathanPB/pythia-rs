@@ -18,7 +18,6 @@ pub struct ContextGenerator {
 
 impl ContextGenerator {
     /// Creates a new ContextGenerator from a SitesSource configuration and a vector of RunConfig.
-    #[allow(dead_code)] // The functionality required by this haven't made its way into the entrypoint yet, but this fn definitely isn't dead code.
     pub fn new(
         site_generator: Box<dyn SiteGenerator>,
         runs: Vec<config::runs::RunConfig>,
