@@ -45,10 +45,7 @@ impl Config {
                 ).as_str()
             )?;
 
-        println!("Using site source driver: {}", self.sites.args.clone());
         let config = (driver.0.config_deserializer)(self.sites.args.clone())?;
-        println!("Sites config: {:?}", config);
-
         (driver.0.create)(config)
     }
 }
