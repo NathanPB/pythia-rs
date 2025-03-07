@@ -31,7 +31,7 @@ pub fn create_pipeline_from_config<'a, ProcessorContextOut: PipelineData + 'stat
 
     let pipeline: Pipelines<ProcessorContextOut> = match workers {
         1 => Pipelines::SYNC(SyncPipeline::new(processor)),
-        _ => Pipelines::THREADED(ThreadedPipeline::builder(processor, worker_count).build()?),
+        _ => Pipelines::THREADED(ThreadedPipeline::new(processor, worker_count)?),
     };
 
     Ok(pipeline)

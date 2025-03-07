@@ -8,7 +8,7 @@ use std::thread;
 use std::thread::ScopedJoinHandle;
 
 #[derive(Debug)]
-struct NotEnoughWorkersError;
+pub struct NotEnoughWorkersError;
 impl Error for NotEnoughWorkersError {}
 
 impl std::fmt::Display for NotEnoughWorkersError {
@@ -20,32 +20,18 @@ impl std::fmt::Display for NotEnoughWorkersError {
     }
 }
 
-pub struct ThreadedPipelineBuilder<ProcessContextOut: PipelineData> {
-    pub workers: usize,
-    pub processor: Arc<dyn Processor<Output = ProcessContextOut>>,
-}
-
 impl<ProcessContextOut: PipelineData> ThreadedPipeline<ProcessContextOut> {
-    pub fn builder(
+    pub fn new(
         processor: impl Processor<Output = ProcessContextOut> + 'static,
         workers: usize,
-    ) -> ThreadedPipelineBuilder<ProcessContextOut> {
-        ThreadedPipelineBuilder {
-            workers,
-            processor: Arc::new(processor),
-        }
-    }
-}
-
-impl<ProcessContextOut: PipelineData> ThreadedPipelineBuilder<ProcessContextOut> {
-    pub fn build(self) -> Result<ThreadedPipeline<ProcessContextOut>, Box<dyn Error>> {
-        if self.workers <= 1 {
+    ) -> Result<ThreadedPipeline<ProcessContextOut>, NotEnoughWorkersError> {
+        if workers <= 1 {
             return Err(NotEnoughWorkersError.into());
         }
 
         Ok(ThreadedPipeline {
-            workers: self.workers,
-            processor: self.processor,
+            workers,
+            processor: Arc::new(processor),
         })
     }
 }
