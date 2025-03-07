@@ -5,24 +5,24 @@ use std::error::Error;
 use std::sync::mpmc::{Receiver, Sender};
 use std::sync::Arc;
 
-pub struct SyncPipeline<ProcessContextOut: PipelineData> {
-    processor: Arc<dyn Processor<Output = ProcessContextOut>>,
+pub struct SyncPipeline<O: PipelineData> {
+    processor: Arc<dyn Processor<Output = O>>,
 }
 
-impl<ProcessContextOut: PipelineData> SyncPipeline<ProcessContextOut> {
-    pub fn new(processor: impl Processor<Output = ProcessContextOut> + 'static) -> Self {
+impl<O: PipelineData> SyncPipeline<O> {
+    pub fn new(processor: impl Processor<Output = O> + 'static) -> Self {
         Self {
             processor: Arc::new(processor),
         }
     }
 }
 
-impl<ProcessContextOut: PipelineData> Pipeline for SyncPipeline<ProcessContextOut> {
-    type ProcessContextOut = ProcessContextOut;
+impl<O: PipelineData> Pipeline for SyncPipeline<O> {
+    type Output = O;
 
     fn conduct(
         &self,
-        tx: &Sender<Self::ProcessContextOut>,
+        tx: &Sender<Self::Output>,
         rx: &Receiver<Context>,
     ) -> Result<(), Box<dyn Error + Send>> {
         self.processor.process(tx, rx)

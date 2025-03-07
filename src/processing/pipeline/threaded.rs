@@ -20,11 +20,11 @@ impl std::fmt::Display for NotEnoughWorkersError {
     }
 }
 
-impl<ProcessContextOut: PipelineData> ThreadedPipeline<ProcessContextOut> {
+impl<O: PipelineData> ThreadedPipeline<O> {
     pub fn new(
-        processor: impl Processor<Output = ProcessContextOut> + 'static,
+        processor: impl Processor<Output = O> + 'static,
         workers: usize,
-    ) -> Result<ThreadedPipeline<ProcessContextOut>, NotEnoughWorkersError> {
+    ) -> Result<ThreadedPipeline<O>, NotEnoughWorkersError> {
         if workers <= 1 {
             return Err(NotEnoughWorkersError.into());
         }
@@ -36,17 +36,17 @@ impl<ProcessContextOut: PipelineData> ThreadedPipeline<ProcessContextOut> {
     }
 }
 
-pub struct ThreadedPipeline<ProcessContextOut: Sized + Send + Sync> {
+pub struct ThreadedPipeline<O: Sized + Send + Sync> {
     workers: usize,
-    processor: Arc<dyn Processor<Output = ProcessContextOut>>,
+    processor: Arc<dyn Processor<Output = O>>,
 }
 
-impl<ProcessContextOut: PipelineData + 'static> Pipeline for ThreadedPipeline<ProcessContextOut> {
-    type ProcessContextOut = ProcessContextOut;
+impl<O: PipelineData + 'static> Pipeline for ThreadedPipeline<O> {
+    type Output = O;
 
     fn conduct(
         &self,
-        tx: &Sender<Self::ProcessContextOut>,
+        tx: &Sender<Self::Output>,
         rx: &Receiver<Context>,
     ) -> Result<(), Box<dyn Error + Send>> {
         thread::scope(|s| {

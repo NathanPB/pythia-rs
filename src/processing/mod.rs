@@ -51,7 +51,7 @@ pub struct Processing<T: PipelineData> {
 impl<T: PipelineData + 'static> Processing<T> {
     pub fn start(self) {
         let ctx_gen = self.ctx_gen;
-        let pipeline: Arc<dyn Pipeline<ProcessContextOut = T>> = match self.pipeline {
+        let pipeline: Arc<dyn Pipeline<Output = T>> = match self.pipeline {
             Pipelines::SYNC(pipeline) => Arc::new(pipeline),
             Pipelines::THREADED(pipeline) => Arc::new(pipeline),
         };
