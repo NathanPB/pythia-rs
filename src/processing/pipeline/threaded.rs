@@ -1,8 +1,11 @@
+use super::super::processor::Processor;
+use super::{Pipeline, PipelineData};
 use crate::data::Context;
-use crate::processing::pipeline::Pipeline;
 use std::error::Error;
+use std::sync::mpmc::{Receiver, Sender};
 use std::sync::Arc;
-use threadpool::ThreadPool;
+use std::thread;
+use std::thread::ScopedJoinHandle;
 
 #[derive(Debug)]
 struct NotEnoughWorkersError;
@@ -17,51 +20,70 @@ impl std::fmt::Display for NotEnoughWorkersError {
     }
 }
 
-pub struct ThreadedPipelineBuilder {
+pub struct ThreadedPipelineBuilder<ProcessContextOut: PipelineData> {
     pub workers: usize,
-    pub processor: Box<dyn Fn(Context) -> Result<(), Box<dyn Error>> + Send + Sync>,
+    pub processor: Arc<dyn Processor<Output = ProcessContextOut>>,
 }
 
-impl ThreadedPipeline {
+impl<ProcessContextOut: PipelineData> ThreadedPipeline<ProcessContextOut> {
     pub fn builder(
-        processor: Box<dyn Fn(Context) -> Result<(), Box<dyn Error>> + Send + Sync>,
+        processor: impl Processor<Output = ProcessContextOut> + 'static,
         workers: usize,
-    ) -> ThreadedPipelineBuilder {
-        ThreadedPipelineBuilder { workers, processor }
+    ) -> ThreadedPipelineBuilder<ProcessContextOut> {
+        ThreadedPipelineBuilder {
+            workers,
+            processor: Arc::new(processor),
+        }
     }
 }
 
-impl ThreadedPipelineBuilder {
-    pub fn build(self) -> Result<ThreadedPipeline, Box<dyn Error>> {
+impl<ProcessContextOut: PipelineData> ThreadedPipelineBuilder<ProcessContextOut> {
+    pub fn build(self) -> Result<ThreadedPipeline<ProcessContextOut>, Box<dyn Error>> {
         if self.workers <= 1 {
             return Err(NotEnoughWorkersError.into());
         }
 
         Ok(ThreadedPipeline {
-            pool: ThreadPool::new(self.workers),
-            processor: Arc::new(self.processor),
+            workers: self.workers,
+            processor: self.processor,
         })
     }
 }
 
-pub struct ThreadedPipeline {
-    pool: ThreadPool,
-    processor: Arc<dyn Fn(Context) -> Result<(), Box<dyn Error>> + Send + Sync>,
+pub struct ThreadedPipeline<ProcessContextOut: Sized + Send + Sync> {
+    workers: usize,
+    processor: Arc<dyn Processor<Output = ProcessContextOut>>,
 }
 
-impl Pipeline for ThreadedPipeline {
-    fn submit(&self, context: Context) -> Result<(), Box<dyn Error>> {
-        let processor = self.processor.clone();
-        self.pool.execute(move || {
-            processor(context).expect("Error in threaded pipeline");
-        });
+impl<ProcessContextOut: PipelineData + 'static> Pipeline for ThreadedPipeline<ProcessContextOut> {
+    type ProcessContextOut = ProcessContextOut;
 
-        Ok(())
-    }
-}
+    fn conduct(
+        &self,
+        tx: &Sender<Self::ProcessContextOut>,
+        rx: &Receiver<Context>,
+    ) -> Result<(), Box<dyn Error + Send>> {
+        thread::scope(|s| {
+            let thread_pool: Vec<ScopedJoinHandle<()>> = (0..self.workers)
+                .enumerate()
+                .map(move |(i, _)| {
+                    s.spawn(move || {
+                        // TODO better error recovery
+                        if let Err(err) = self.processor.process(&tx, &rx) {
+                            panic!("ThreadedPipeline: Worker Thread {} crashed: {}", i, err);
+                        }
+                    })
+                })
+                .collect();
 
-impl Drop for ThreadedPipeline {
-    fn drop(&mut self) {
-        self.pool.join();
+            thread_pool.into_iter().enumerate().for_each(|(i, t)| {
+                t.join().expect(&format!(
+                    "ThreadedPipeline: Worker Thread {} crashed when joining.",
+                    i
+                ));
+            });
+
+            Ok(())
+        })
     }
 }

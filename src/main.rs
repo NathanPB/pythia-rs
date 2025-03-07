@@ -1,3 +1,5 @@
+#![feature(mpmc_channel)]
+
 mod config;
 mod data;
 mod processing;

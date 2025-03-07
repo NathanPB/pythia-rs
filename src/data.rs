@@ -1,4 +1,5 @@
 use crate::config;
+use crate::processing::PipelineData;
 
 const GEO_DEG_PRECISION: f64 = 100_000.0;
 
@@ -86,3 +87,5 @@ pub struct Context {
     // The part of the code that uses this is not yet implemented, so it's not dead code.
     pub run: config::runs::RunConfig,
 }
+
+impl PipelineData for Context {}
