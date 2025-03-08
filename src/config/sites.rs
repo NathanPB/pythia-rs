@@ -16,6 +16,8 @@ pub struct SiteSourceConfig {
     #[serde(rename = "type")]
     pub source_type: String,
 
+    pub sample_size: Option<usize>,
+
     #[serde(flatten)]
     args: serde_json::Value,
 }

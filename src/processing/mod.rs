@@ -28,7 +28,11 @@ impl<'a> ProcessingBuilder<'a> {
             &self.registries.reg_sitegen_drivers(),
         )?;
 
-        let ctx_gen = ContextGenerator::new(Box::new(sitegen), self.config.runs.clone())?;
+        let ctx_gen = ContextGenerator::new(
+            Box::new(sitegen),
+            self.config.runs.clone(),
+            self.config.sites.sample_size,
+        )?;
 
         let processor = UnbatchedProcessor {};
 

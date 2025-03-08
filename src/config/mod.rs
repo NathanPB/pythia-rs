@@ -29,7 +29,7 @@ pub struct Args {
 #[serde_inline_default]
 #[derive(Validate, Deserialize, Clone, Debug)]
 pub struct Config {
-    sites: SiteSourceConfig,
+    pub sites: SiteSourceConfig,
 
     #[validate(length(min = 1, message = "At least one run is required"))]
     #[validate(nested)]

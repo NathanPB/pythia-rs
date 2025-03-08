@@ -11,7 +11,8 @@ use crate::sites::SiteGenerator;
 pub struct ContextGenerator {
     site_generator: Box<dyn SiteGenerator>,
     curr_site: Option<Site>,
-
+    site_sample_size: Option<usize>,
+    current_site_count: usize,
     runs: Vec<config::runs::RunConfig>,
     current_run: usize,
 }
@@ -21,10 +22,13 @@ impl ContextGenerator {
     pub fn new(
         site_generator: Box<dyn SiteGenerator>,
         runs: Vec<config::runs::RunConfig>,
+        site_sample_size: Option<usize>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         Ok(ContextGenerator {
             site_generator,
             curr_site: None,
+            site_sample_size,
+            current_site_count: 0,
             runs,
             current_run: 0,
         })
@@ -35,6 +39,12 @@ impl Iterator for ContextGenerator {
     type Item = Context;
 
     fn next(&mut self) -> Option<Self::Item> {
+        if let Some(sample_size) = self.site_sample_size {
+            if self.current_site_count >= sample_size {
+                return None;
+            }
+        }
+
         if self.current_run >= self.runs.len() {
             self.current_run = 0;
             self.curr_site = None;
@@ -47,6 +57,7 @@ impl Iterator for ContextGenerator {
 
         let run = self.runs[self.current_run].clone();
         self.current_run += 1;
+        self.current_site_count += 1;
         Some(Context {
             site: self.curr_site.clone()?,
             run,
@@ -81,7 +92,7 @@ mod tests {
             },
         ];
 
-        let generator = ContextGenerator::new(site_src, runs).unwrap();
+        let generator = ContextGenerator::new(site_src, runs, None).unwrap();
         let mut max = i32::MIN;
 
         for (i, ctx) in generator.enumerate() {
@@ -97,5 +108,22 @@ mod tests {
         }
 
         assert_eq!(max, 199);
+    }
+
+    #[test]
+    fn test_sample_size() {
+        let site_src: Box<dyn SiteGenerator> = Box::new((0..200).map(|id| Site {
+            id,
+            lon: GeoDeg::from(0.0),
+            lat: GeoDeg::from(0.0),
+        }));
+
+        let runs = vec![config::runs::RunConfig {
+            name: String::from("r1"),
+            extra: HashMap::new(),
+        }];
+
+        let generator = ContextGenerator::new(site_src, runs, Some(50)).unwrap();
+        assert_eq!(generator.count(), 50);
     }
 }
