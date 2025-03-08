@@ -1,5 +1,5 @@
+use super::super::context::Context;
 use super::Processor;
-use crate::data::Context;
 use std::error::Error;
 use std::sync::mpmc::{Receiver, Sender};
 

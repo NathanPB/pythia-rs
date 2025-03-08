@@ -1,6 +1,6 @@
 use crate::config::{Args, Config};
-use crate::data::Context;
 use crate::registry::{Namespace, Registries};
+use context::Context;
 use context::ContextGenerator;
 use pipeline::{create_pipeline_from_config, Pipeline, Pipelines};
 use processor::unbatched::UnbatchedProcessor;

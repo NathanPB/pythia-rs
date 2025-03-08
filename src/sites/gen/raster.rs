@@ -1,4 +1,5 @@
-use crate::data::{GeoDeg, Site};
+use super::super::Site;
+use crate::data::GeoDeg;
 use gdal::raster::{Buffer, GdalDataType};
 use gdal::{Dataset, GeoTransformEx};
 use std::fmt;

@@ -1,5 +1,6 @@
+use super::PipelineData;
 use crate::config;
-use crate::data::{Context, Site};
+use crate::sites::Site;
 use crate::sites::SiteGenerator;
 
 /// Given a site source configuration, ContextGenerator will generate a sequence of Contexts to be processed.
@@ -127,3 +128,17 @@ mod tests {
         assert_eq!(generator.count(), 50);
     }
 }
+
+/// Holds the information about the execution of a single run on a specific site with its bound run configurations.
+#[derive(Debug, Clone)]
+pub struct Context {
+    #[allow(dead_code)]
+    // The part of the code that uses this is not yet implemented, so it's not dead code.
+    pub site: Site,
+
+    #[allow(dead_code)]
+    // The part of the code that uses this is not yet implemented, so it's not dead code.
+    pub run: config::runs::RunConfig,
+}
+
+impl PipelineData for Context {}

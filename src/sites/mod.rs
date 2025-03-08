@@ -2,7 +2,7 @@ pub mod config;
 pub mod drivers;
 pub mod gen;
 
-use crate::data::Site;
+use crate::data::GeoDeg;
 use std::any::Any;
 use std::error::Error;
 use std::sync::Arc;
@@ -54,4 +54,11 @@ impl<G: SiteGenerator, C> SiteGeneratorDriver<G, C> {
             }),
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Site {
+    pub id: i32,
+    pub lon: GeoDeg,
+    pub lat: GeoDeg,
 }

@@ -1,6 +1,3 @@
-use crate::config;
-use crate::processing::PipelineData;
-
 const GEO_DEG_PRECISION: f64 = 100_000.0;
 
 /// Type that represents a latitude or longitude in degrees. It holds coordinates with a fixed precision of up to 5 decimal places.
@@ -68,24 +65,3 @@ impl std::fmt::Display for GeoDeg {
         write!(f, "{:.5}", self.0)
     }
 }
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Site {
-    pub id: i32,
-    pub lon: GeoDeg,
-    pub lat: GeoDeg,
-}
-
-/// Holds the information about the execution of a single run on a specific site with its bound run configurations.
-#[derive(Debug, Clone)]
-pub struct Context {
-    #[allow(dead_code)]
-    // The part of the code that uses this is not yet implemented, so it's not dead code.
-    pub site: Site,
-
-    #[allow(dead_code)]
-    // The part of the code that uses this is not yet implemented, so it's not dead code.
-    pub run: config::runs::RunConfig,
-}
-
-impl PipelineData for Context {}

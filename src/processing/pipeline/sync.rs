@@ -1,6 +1,6 @@
+use super::super::context::Context;
 use super::super::processor::Processor;
 use super::{Pipeline, PipelineData};
-use crate::data::Context;
 use std::error::Error;
 use std::sync::mpmc::{Receiver, Sender};
 use std::sync::Arc;

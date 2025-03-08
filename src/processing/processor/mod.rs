@@ -1,7 +1,7 @@
 pub mod unbatched;
 
+use super::context::Context;
 use super::PipelineData;
-use crate::data::Context;
 use std::error::Error;
 use std::sync::mpmc::{Receiver, Sender};
 

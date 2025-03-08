@@ -1,4 +1,5 @@
-use crate::data::{GeoDeg, Site};
+use super::super::Site;
+use crate::data::GeoDeg;
 use gdal::errors::GdalError;
 use gdal::vector::{Feature, FeatureIterator, Layer, LayerAccess};
 use gdal::Dataset;
