@@ -16,6 +16,66 @@ impl GeoDeg {
     pub fn as_f32(self) -> f32 {
         self.0
     }
+
+    /// Formats the latitude value as a string with a specified number of decimal places.
+    ///
+    /// - Positive values are suffixed with `"N"` (North).
+    /// - Negative values are suffixed with `"S"` (South).
+    /// - The decimal point is replaced with an underscore (`_`) for file-safe formatting.
+    ///
+    /// # Arguments
+    ///
+    /// * `places` - The number of decimal places to format the coordinate to.
+    ///
+    /// # Returns
+    ///
+    /// A formatted string representing the latitude coordinate.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let lat = GeoDeg::from(-12.3456);
+    /// assert_eq!(lat.ns(4), "12_3456S");
+    /// ```
+    pub fn ns(&self, places: usize) -> String {
+        format!(
+            "{:.2$}{}",
+            self.0.abs(),
+            if self.0 >= 0.0 { "N" } else { "S" },
+            places,
+        )
+        .replace(".", "_")
+    }
+
+    /// Formats the longitude value as a string with a specified number of decimal places.
+    ///
+    /// - Positive values are suffixed with `"E"` (East).
+    /// - Negative values are suffixed with `"W"` (West).
+    /// - The decimal point is replaced with an underscore (`_`) for file-safe formatting.
+    ///
+    /// # Arguments
+    ///
+    /// * `places` - The number of decimal places to format the coordinate to.
+    ///
+    /// # Returns
+    ///
+    /// A formatted string representing the longitude coordinate.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let lng = GeoDeg::from(78.9101);
+    /// assert_eq!(lng.ew(3), "78_910E");
+    /// ```
+    pub fn ew(&self, places: usize) -> String {
+        format!(
+            "{:.2$}{}",
+            self.0.abs(),
+            if self.0 >= 0.0 { "E" } else { "W" },
+            places,
+        )
+        .replace(".", "_")
+    }
 }
 
 impl From<f64> for GeoDeg {
@@ -63,5 +123,20 @@ impl std::ops::Div<f32> for GeoDeg {
 impl std::fmt::Display for GeoDeg {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{:.5}", self.0)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_ns_we() {
+        assert_eq!(GeoDeg::from(-1.0).ns(2), "1_00S");
+        assert_eq!(GeoDeg::from(-1.0).ew(2), "1_00W");
+        assert_eq!(GeoDeg::from(0.0).ns(2), "0_00N");
+        assert_eq!(GeoDeg::from(0.0).ew(2), "0_00E");
+        assert_eq!(GeoDeg::from(1.0).ns(2), "1_00N");
+        assert_eq!(GeoDeg::from(1.0).ew(2), "1_00E");
     }
 }

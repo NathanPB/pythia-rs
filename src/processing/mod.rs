@@ -4,6 +4,7 @@ use context::Context;
 use context::ContextGenerator;
 use pipeline::{create_pipeline_from_config, Pipeline, Pipelines};
 use processor::unbatched::UnbatchedProcessor;
+use std::path::PathBuf;
 use std::sync::mpmc::sync_channel;
 use std::sync::Arc;
 use std::thread;
@@ -17,6 +18,7 @@ pub trait PipelineData: Sized + Send + Sync {}
 pub struct ProcessingBuilder<'a> {
     pub config: &'a Config,
     pub args: &'a Args,
+    pub workdir: PathBuf,
     pub default_namespace: &'a Namespace,
     pub registries: &'a mut Registries,
 }
@@ -34,7 +36,9 @@ impl<'a> ProcessingBuilder<'a> {
             self.config.sites.sample_size,
         )?;
 
-        let processor = UnbatchedProcessor {};
+        let processor = UnbatchedProcessor {
+            workdir: self.workdir,
+        };
 
         let pipeline = create_pipeline_from_config(self.config, self.args.workers, processor)?;
 

@@ -47,6 +47,7 @@ fn main() {
     let processing = ProcessingBuilder {
         config: &config,
         args: &args,
+        workdir,
         default_namespace: &namespace,
         registries: &mut registries,
     }
