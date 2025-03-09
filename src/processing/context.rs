@@ -2,6 +2,7 @@ use super::PipelineData;
 use crate::config;
 use crate::sites::Site;
 use crate::sites::SiteGenerator;
+use std::path::PathBuf;
 
 /// Given a site source configuration, ContextGenerator will generate a sequence of Contexts to be processed.
 ///
@@ -127,6 +128,24 @@ mod tests {
         let generator = ContextGenerator::new(site_src, runs, Some(50)).unwrap();
         assert_eq!(generator.count(), 50);
     }
+
+    #[test]
+    fn test_context_dir() {
+        let wd = PathBuf::from("/tmp");
+        let ctx = Context {
+            site: Site {
+                id: 0,
+                lon: GeoDeg::from(15.222),
+                lat: GeoDeg::from(-15.23133),
+            },
+            run: config::runs::RunConfig {
+                name: String::from("r1"),
+                extra: HashMap::new(),
+            },
+        };
+
+        assert_eq!(ctx.dir(&wd), PathBuf::from("/tmp/r1/15_2220N/15_2313W"));
+    }
 }
 
 /// Holds the information about the execution of a single run on a specific site with its bound run configurations.
@@ -142,3 +161,13 @@ pub struct Context {
 }
 
 impl PipelineData for Context {}
+
+impl Context {
+    pub fn dir(&self, base: &PathBuf) -> PathBuf {
+        let mut path = base.clone();
+        path.push(&self.run.name);
+        path.push(&self.site.lon.ns(4));
+        path.push(&self.site.lat.ew(4));
+        path
+    }
+}

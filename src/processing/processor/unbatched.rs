@@ -19,10 +19,7 @@ impl Processor for UnbatchedProcessor {
     ) -> Result<(), Box<dyn Error + Send>> {
         rx.iter()
             .map(|ctx| {
-                let mut path = self.workdir.clone();
-                path.push(&ctx.run.name);
-                path.push(&ctx.site.lon.ns(4));
-                path.push(&ctx.site.lat.ew(4));
+                let path = ctx.dir(&self.workdir);
                 if let Err(err) = create_dir_all(&path) {
                     eprintln!("UnbatchedProcessor: Failed to create directory: {}", err);
                 }
