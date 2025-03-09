@@ -1,4 +1,5 @@
 use crate::config::{Args, Config};
+use crate::processing::template::TemplateEngine;
 use crate::registry::{Namespace, Registries};
 use context::Context;
 use context::ContextGenerator;
@@ -12,6 +13,7 @@ use std::thread;
 mod context;
 mod pipeline;
 mod processor;
+mod template;
 
 pub trait PipelineData: Sized + Send + Sync {}
 
@@ -42,9 +44,15 @@ impl<'a> ProcessingBuilder<'a> {
 
         let pipeline = create_pipeline_from_config(self.config, self.args.workers, processor)?;
 
+        let mut templates = TemplateEngine::default();
+        for run in &self.config.runs {
+            templates.register(run.name.as_str(), &run.template)?;
+        }
+
         Ok(Processing {
             pipeline,
             ctx_gen,
+            templates,
             buffer_size: self.args.pipeline_buffer_size,
         })
     }
@@ -53,6 +61,7 @@ impl<'a> ProcessingBuilder<'a> {
 pub struct Processing<T: PipelineData> {
     pipeline: Pipelines<T>,
     ctx_gen: ContextGenerator,
+    templates: TemplateEngine,
     buffer_size: usize,
 }
 
@@ -69,7 +78,11 @@ impl<T: PipelineData + 'static> Processing<T> {
             let (tx_conduct, rx) = sync_channel::<T>(self.buffer_size);
 
             let tx_conduct2 = tx_conduct.clone();
-            let t_conductor = s.spawn(move || pipeline.conduct(&tx_conduct2, &rx_conduct).unwrap());
+            let t_conductor = s.spawn(move || {
+                pipeline
+                    .conduct(&tx_conduct2, &rx_conduct, &self.templates)
+                    .unwrap()
+            });
             let t_sink = s.spawn(move || {
                 for _ in rx { /* noop */ }
             });

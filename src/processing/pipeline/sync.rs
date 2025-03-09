@@ -1,5 +1,6 @@
 use super::super::context::Context;
 use super::super::processor::Processor;
+use super::super::template::TemplateEngine;
 use super::{Pipeline, PipelineData};
 use std::error::Error;
 use std::sync::mpmc::{Receiver, Sender};
@@ -24,7 +25,8 @@ impl<O: PipelineData> Pipeline for SyncPipeline<O> {
         &self,
         tx: &Sender<Self::Output>,
         rx: &Receiver<Context>,
+        templates: &TemplateEngine,
     ) -> Result<(), Box<dyn Error + Send>> {
-        self.processor.process(tx, rx)
+        self.processor.process(tx, rx, templates)
     }
 }

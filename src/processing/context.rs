@@ -74,6 +74,7 @@ mod tests {
     use crate::data::GeoDeg;
     use crate::sites::SiteGenerator;
     use std::collections::HashMap;
+    use std::path::PathBuf;
 
     #[test]
     fn context_gen() {
@@ -87,10 +88,12 @@ mod tests {
             config::runs::RunConfig {
                 name: String::from("r1"),
                 extra: HashMap::new(),
+                template: PathBuf::from("dummy"),
             },
             config::runs::RunConfig {
                 name: String::from("r2"),
                 extra: HashMap::new(),
+                template: PathBuf::from("dummy"),
             },
         ];
 
@@ -123,6 +126,7 @@ mod tests {
         let runs = vec![config::runs::RunConfig {
             name: String::from("r1"),
             extra: HashMap::new(),
+            template: PathBuf::from("dummy"),
         }];
 
         let generator = ContextGenerator::new(site_src, runs, Some(50)).unwrap();
@@ -141,6 +145,7 @@ mod tests {
             run: config::runs::RunConfig {
                 name: String::from("r1"),
                 extra: HashMap::new(),
+                template: PathBuf::from("dummy"),
             },
         };
 
@@ -169,5 +174,21 @@ impl Context {
         path.push(&self.site.lon.ns(4));
         path.push(&self.site.lat.ew(4));
         path
+    }
+
+    pub fn tera(&self) -> tera::Context {
+        let mut ctx = tera::Context::new();
+        ctx.insert("site_id", &self.site.id);
+        ctx.insert("soil_id", &self.site.id); // Backwards compatibility. In the original Pythia, the site ID was the soil ID.
+        ctx.insert("lng", &self.site.lon.as_f32()); // Backwards compatibility, original Pythia impl used lat/lng instead of lon/lat.
+        ctx.insert("lon", &self.site.lon.as_f32());
+        ctx.insert("lat", &self.site.lat.as_f32());
+        ctx.insert("name", &self.run.name);
+
+        for (k, v) in &self.run.extra {
+            ctx.insert(k, v);
+        }
+
+        ctx
     }
 }

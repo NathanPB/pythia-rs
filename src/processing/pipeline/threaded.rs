@@ -1,5 +1,6 @@
 use super::super::context::Context;
 use super::super::processor::Processor;
+use super::super::template::TemplateEngine;
 use super::{Pipeline, PipelineData};
 use std::error::Error;
 use std::sync::mpmc::{Receiver, Sender};
@@ -48,6 +49,7 @@ impl<O: PipelineData + 'static> Pipeline for ThreadedPipeline<O> {
         &self,
         tx: &Sender<Self::Output>,
         rx: &Receiver<Context>,
+        templates: &TemplateEngine,
     ) -> Result<(), Box<dyn Error + Send>> {
         thread::scope(|s| {
             let thread_pool: Vec<ScopedJoinHandle<()>> = (0..self.workers)
@@ -55,7 +57,7 @@ impl<O: PipelineData + 'static> Pipeline for ThreadedPipeline<O> {
                 .map(move |(i, _)| {
                     s.spawn(move || {
                         // TODO better error recovery
-                        if let Err(err) = self.processor.process(&tx, &rx) {
+                        if let Err(err) = self.processor.process(&tx, &rx, &templates) {
                             panic!("ThreadedPipeline: Worker Thread {} crashed: {}", i, err);
                         }
                     })

@@ -3,6 +3,7 @@ mod threaded;
 
 use super::super::processing::context::Context;
 use super::processor::Processor;
+use super::template::TemplateEngine;
 use super::PipelineData;
 use crate::config::Config;
 use std::error::Error;
@@ -16,6 +17,7 @@ pub trait Pipeline: Send + Sync {
         &self,
         tx: &Sender<Self::Output>,
         rx: &Receiver<Context>,
+        templates: &TemplateEngine,
     ) -> Result<(), Box<dyn Error + Send>>;
 }
 
