@@ -1,3 +1,4 @@
+use crate::processing::context::ContextValue;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -40,14 +41,6 @@ fn validate_template_file_exists(path: &PathBuf) -> Result<(), ValidationError> 
     Ok(())
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
-#[serde(untagged)]
-pub enum RunValue {
-    Bool(bool),
-    Number(serde_json::Number),
-    String(String),
-}
-
 #[derive(Validate, Serialize, Deserialize, Clone, Debug)]
 pub struct RunConfig {
     #[validate(regex(path = *RE_VALID_RUN_NAME, message = "Run name must be alphanumeric and contain only underscores and dashes"))]
@@ -57,5 +50,5 @@ pub struct RunConfig {
     pub template: PathBuf,
 
     #[serde(flatten)]
-    pub extra: HashMap<String, RunValue>,
+    pub extra: HashMap<String, ContextValue>,
 }

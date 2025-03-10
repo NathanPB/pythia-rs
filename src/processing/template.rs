@@ -43,9 +43,11 @@ impl TemplateEngine {
     }
 
     /// TODO: error handling
-    pub fn render(&self, ctx: &Context) -> String {
-        self.tera
-            .render(ctx.run.name.as_str(), &ctx.tera())
-            .unwrap()
+    pub fn render(&self, ctx: &Context) -> Result<String, Box<dyn Error>> {
+        let str = self
+            .tera
+            .render(ctx.run.name.as_str(), &ctx.tera()?)
+            .unwrap();
+        Ok(str)
     }
 }

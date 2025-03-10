@@ -39,7 +39,7 @@ impl Processor for UnbatchedProcessor {
                     }
                 };
 
-                let rendered = templates.render(&ctx);
+                let rendered = templates.render(&ctx).unwrap();
                 let mut template_path = ctx.dir(&self.workdir);
                 template_path.push(filename);
 

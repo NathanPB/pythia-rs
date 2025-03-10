@@ -10,7 +10,7 @@ use std::sync::mpmc::sync_channel;
 use std::sync::Arc;
 use std::thread;
 
-mod context;
+pub mod context;
 mod pipeline;
 mod processor;
 mod template;
