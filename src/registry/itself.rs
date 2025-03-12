@@ -14,12 +14,14 @@ fn register_sitegen_drivers(
     registry: &mut Registry<SiteGeneratorDriverResource>,
 ) -> Result<(), Box<dyn Error>> {
     registry.register(
-        &namespace.id("vector"),
+        &namespace,
+        "vector",
         SiteGeneratorDriverResource(DRIVER_VECTOR.clone().coerce_to_dynamic()),
     )?;
 
     registry.register(
-        &namespace.id("raster"),
+        &namespace,
+        "raster",
         SiteGeneratorDriverResource(DRIVER_RASTER.clone().coerce_to_dynamic()),
     )?;
 

@@ -53,11 +53,8 @@ pub struct Namespace {
 impl Namespace {
     /// Creates a new [`Identifier`] under the current namespace with the given `id`.
     /// Due to ergonomics, this doesn't check the `id` formatting (see [`RE_VALID_NAMESPACE_OR_ID`]). Instead, the value is checked when written to the [`Registry`].
-    pub fn id(&self, id: &str) -> Identifier {
-        Identifier {
-            namespace: self.clone(),
-            id: id.to_string(),
-        }
+    pub fn id(&self, id: &str) -> PublicIdentifier {
+        PublicIdentifier::new(self.namespace.clone(), id.to_string())
     }
 
     /// Gets the namespace string.
@@ -69,20 +66,6 @@ impl Namespace {
 impl std::fmt::Display for Namespace {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.namespace)
-    }
-}
-
-/// An identifier is a unique name under a [`Namespace`]. It is used to identify [`Resource`]s in the [`Registry`].
-#[derive(Debug, Hash, Clone, Eq, PartialEq)]
-pub struct Identifier {
-    namespace: Namespace,
-    id: String,
-}
-
-impl std::fmt::Display for Identifier {
-    /// Formats the [`Identifier`] as `namespace:id`.
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}:{}", self.namespace, self.id)
     }
 }
 
@@ -109,50 +92,47 @@ impl<T: Resource> Registry<T> {
     ///
     /// Returns itself on success, for convenience.
     #[allow(dead_code)]
-    pub fn register(&mut self, id: &Identifier, resource: T) -> Result<&mut Self, Box<dyn Error>> {
-        if !RE_VALID_NAMESPACE_OR_ID.is_match(id.id.as_str()) {
-            return Err(Box::new(IllegalNameError(id.id.clone())));
+    pub fn register(
+        &mut self,
+        namespace: &Namespace,
+        id: &str,
+        resource: T,
+    ) -> Result<&mut Self, Box<dyn Error>> {
+        if !RE_VALID_NAMESPACE_OR_ID.is_match(id) {
+            return Err(Box::new(IllegalNameError(id.to_string())));
         }
 
-        if self.is_registered(id) {
-            return Err(Box::new(AlreadyRegisteredError(id.clone())));
+        let identifier = PublicIdentifier::new(namespace.namespace().to_string(), id.to_string());
+        if self.is_registered(&identifier) {
+            return Err(Box::new(AlreadyRegisteredError(identifier)));
         }
 
-        self.map
-            .insert(id.namespace.namespace.clone(), id.id.clone(), resource);
+        self.map.insert(
+            namespace.namespace.clone(),
+            id.to_string().clone(),
+            resource,
+        );
         Ok(self)
     }
 
-    /// Checks if there is something registered under the given [`Identifier`].
+    /// Checks if there is something registered under the given namespace and id.
     #[allow(dead_code)]
-    pub fn is_registered(&self, id: &Identifier) -> bool {
-        self.map
-            .contains_key(&id.namespace.namespace.clone(), &id.id.clone())
+    pub fn is_registered(&self, identifier: &PublicIdentifier) -> bool {
+        self.map.contains_key(&identifier.namespace, &identifier.id)
     }
 
-    /// Returns the [`Resource`] registered under the given [`Identifier`], if any.
+    /// Returns the [`Resource`] registered under the given namespace and id, if any.
     #[allow(dead_code)]
-    pub fn get(&self, id: &Identifier) -> Option<&T> {
-        self.get_foreign(id.namespace.namespace.as_str(), id.id.as_str())
-    }
-
-    /// Returns the [`Resource`] registered under the ``namespace`` and ``id``, if any.
-    #[allow(dead_code)]
-    pub fn get_foreign(&self, namespace: &str, id: &str) -> Option<&T> {
-        self.map.get(&namespace.to_string(), &id.to_string())
+    pub fn get(&self, identifier: &PublicIdentifier) -> Option<&T> {
+        self.map.get(&identifier.namespace, &identifier.id)
     }
 
     /// Returns the [`Identifier`] of all registered [`Resource`]s.
     #[allow(dead_code)]
-    pub fn ids(&self) -> Vec<Identifier> {
+    pub fn ids(&self) -> Vec<PublicIdentifier> {
         self.map
             .keys()
-            .map(|(k1, k2)| Identifier {
-                id: k2.clone(),
-                namespace: Namespace {
-                    namespace: k1.clone(),
-                },
-            })
+            .map(|(k1, k2)| PublicIdentifier::new(k1.clone(), k2.clone()))
             .collect()
     }
 
@@ -164,20 +144,10 @@ impl<T: Resource> Registry<T> {
 
     /// Returns all registered [`Resource`]s and their [`Identifier`]s.
     #[allow(dead_code)]
-    pub fn entries(&self) -> Vec<(Identifier, &T)> {
+    pub fn entries(&self) -> Vec<(PublicIdentifier, &T)> {
         self.map
             .iter()
-            .map(|(k1, k2, v)| {
-                (
-                    Identifier {
-                        id: k2.clone(),
-                        namespace: Namespace {
-                            namespace: k1.clone(),
-                        },
-                    },
-                    v,
-                )
-            })
+            .map(|(k1, k2, v)| (PublicIdentifier::new(k1.clone(), k2.clone()), v))
             .collect()
     }
 
@@ -283,7 +253,7 @@ mod tests {
             namespace: "foo".to_string(),
         };
         let mut reg: Registry<DummyResource> = Registry::new();
-        match reg.register(&namespace.id("inv@lid"), DummyResource.into()) {
+        match reg.register(&namespace, "inv@lid", DummyResource.into()) {
             Ok(_) => panic!("Expected to disallow invalid id"),
             Err(_) => {}
         }
@@ -296,7 +266,8 @@ mod tests {
         };
         let mut reg: Registry<DummyResource> = Registry::new();
         let id = namespace.id("bar");
-        reg.register(&id, DummyResource.into()).unwrap();
+        reg.register(&namespace, id.id.as_str(), DummyResource.into())
+            .unwrap();
 
         match reg.get(&id) {
             Some(res) => assert_eq!(
@@ -307,7 +278,10 @@ mod tests {
             None => panic!("Expected to find resource"),
         }
 
-        assert_eq!(reg.get(&id), reg.get_foreign("foo", "bar"));
+        assert_eq!(
+            reg.get(&id),
+            reg.get(&PublicIdentifier::new("foo".to_string(), "bar".to_string()))
+        );
         assert_eq!(reg.ids(), vec![namespace.id("bar")]);
         assert_eq!(reg.resources(), vec![&DummyResource.into()]);
         assert_eq!(reg.entries(), vec![(id, &DummyResource.into())]);

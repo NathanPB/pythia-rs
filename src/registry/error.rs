@@ -3,7 +3,7 @@ use std::error::Error;
 use std::fmt::Display;
 
 #[derive(Debug)]
-pub struct AlreadyRegisteredError(pub Identifier);
+pub struct AlreadyRegisteredError(pub PublicIdentifier);
 
 impl Error for AlreadyRegisteredError {}
 

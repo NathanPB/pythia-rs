@@ -1,4 +1,4 @@
-use crate::registry::{Identifier, RE_VALID_NAMESPACE_AND_ID};
+use crate::registry::RE_VALID_NAMESPACE_AND_ID;
 use serde::de::DeserializeSeed;
 use serde::{Deserialize, Serialize};
 
@@ -11,20 +11,17 @@ pub struct PublicIdentifier {
     pub id: String,
 }
 
+impl PublicIdentifier {
+    /// Creates a new [`PublicIdentifier`] under the given `namespace` and `id`.
+    pub fn new(namespace: String, id: String) -> Self {
+        Self { namespace, id }
+    }
+}
+
 impl std::fmt::Display for PublicIdentifier {
     /// Formats the [`PublicIdentifier`] as `namespace:id`.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}:{}", self.namespace, self.id)
-    }
-}
-
-impl From<Identifier> for PublicIdentifier {
-    /// Converts a [`super::Identifier`] to a [`PublicIdentifier`].
-    fn from(id: Identifier) -> Self {
-        Self {
-            namespace: id.namespace.namespace,
-            id: id.id,
-        }
     }
 }
 

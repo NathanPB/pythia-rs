@@ -21,7 +21,7 @@ impl Config {
         registry: &Registry<SiteGeneratorDriverResource>,
     ) -> Result<impl SiteGenerator, Box<dyn Error>> {
         let id = &self.sites.source_type;
-        let driver = registry.get_foreign(id.namespace.as_str(), id.id.as_str())
+        let driver = registry.get(id)
             .ok_or(
                 format!(
                     "Sites source driver under the ID {} couldn't be found. Are you sure that this resource exists (or their plugin is loaded?).",
