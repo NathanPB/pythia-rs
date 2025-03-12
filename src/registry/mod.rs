@@ -42,6 +42,9 @@ pub static RE_VALID_NAMESPACE_AND_ID: LazyLock<regex::Regex> =
     LazyLock::new(|| regex::Regex::new(r"^(?:(?<ns>[a-z0-9._-]+):)?(?<id>[a-z0-9._-]+)$").unwrap());
 
 /// A namespace is a name that is used to group [`Identifier`]s. It effectively owns the resources that are registered on the [`Registry`].
+/// Namespaces are supposed to be PRIVATE to the plugin/extension that owns them. They shouldn't ever be shared with other plugins/extensions.
+/// Sharing them would allow other plugins/extensions to register resources impersonating the namespace of the plugin/extension that owns it.
+/// A namespace is only instantiated through the [`Registries::claim_namespace`] method.
 #[derive(Debug, Hash, Clone, Eq, PartialEq)]
 pub struct Namespace {
     namespace: String,
