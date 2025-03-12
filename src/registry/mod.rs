@@ -8,11 +8,13 @@
 //! Please note, however, that the amount of resources is **zero** at the moment, as this module is work in progress.
 
 pub mod error;
+mod identifier;
 pub mod itself;
 pub mod resources;
 
 use crate::utils::threehashmap::K2HashMap;
 use error::*;
+pub use identifier::{PublicIdentifier, PublicIdentifierSeed};
 use resources::*;
 use std::collections::HashSet;
 use std::error::Error;

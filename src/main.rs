@@ -13,15 +13,20 @@ use crate::workdir::make_workdir;
 use registry::{itself::init_itself, Registries};
 
 fn main() {
-    let cfg_result = config::init();
+    let mut registries = Registries::new();
+    let namespace = init_itself(&mut registries).unwrap();
+    println!("Initialized own resources on namespace \"{}\"", namespace);
+
+    let cfg_seed = config::ConfigSeedBuilder::default()
+        .with_default_namespace(namespace.namespace().to_string())
+        .build()
+        .unwrap();
+
+    let cfg_result = config::init(cfg_seed);
     if let Err(e) = cfg_result {
         println!("{}", e);
         return;
     }
-
-    let mut registries = Registries::new();
-    let namespace = init_itself(&mut registries).unwrap();
-    println!("Initialized own resources on namespace \"{}\"", namespace);
 
     let (config, args, config_file) = cfg_result.unwrap();
     println!(
@@ -48,7 +53,6 @@ fn main() {
         config: &config,
         args: &args,
         workdir,
-        default_namespace: &namespace,
         registries: &mut registries,
     }
     .build()

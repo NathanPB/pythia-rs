@@ -1,13 +1,15 @@
 pub mod runs;
 pub mod sites;
 
-use crate::config::sites::SiteSourceConfig;
+use crate::config::sites::{SiteSourceConfig, SiteSourceConfigSeed};
+use crate::registry::PublicIdentifierSeed;
 use clap::Parser;
 use runs::*;
-use serde::Deserialize;
+use serde::de::{DeserializeSeed, MapAccess, Visitor};
 use serde_inline_default::serde_inline_default;
 use std::borrow::Cow;
 use std::error::Error;
+use std::fmt;
 use std::path::PathBuf;
 use validator::{Validate, ValidationError};
 
@@ -113,7 +115,7 @@ impl std::fmt::Display for ArgsError {
 }
 
 #[serde_inline_default]
-#[derive(Validate, Deserialize, Clone, Debug)]
+#[derive(Validate, Clone, Debug)]
 pub struct Config {
     pub sites: SiteSourceConfig,
 
@@ -121,6 +123,90 @@ pub struct Config {
     #[validate(nested)]
     #[validate(custom(function = "validate_unique_run_names"))]
     pub runs: Vec<RunConfig>,
+}
+
+#[derive(Debug)]
+pub enum ConfigSeedBuilderError {
+    MissingDefaultNamespace,
+}
+
+pub struct ConfigSeedBuilder {
+    default_namespace: Option<String>,
+}
+
+impl Default for ConfigSeedBuilder {
+    fn default() -> Self {
+        Self {
+            default_namespace: None,
+        }
+    }
+}
+
+impl ConfigSeedBuilder {
+    pub fn with_default_namespace(mut self, default_namespace: String) -> Self {
+        self.default_namespace = Some(default_namespace);
+        self
+    }
+
+    pub fn build(self) -> Result<ConfigSeed, ConfigSeedBuilderError> {
+        Ok(ConfigSeed {
+            sites_seed: SiteSourceConfigSeed {
+                id_seed: PublicIdentifierSeed {
+                    default_namespace: self
+                        .default_namespace
+                        .ok_or(ConfigSeedBuilderError::MissingDefaultNamespace)?,
+                },
+            },
+        })
+    }
+}
+
+pub struct ConfigSeed {
+    pub sites_seed: SiteSourceConfigSeed,
+}
+
+impl<'de> DeserializeSeed<'de> for ConfigSeed {
+    type Value = Config;
+
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_map(ConfigVisitor { seed: self })
+    }
+}
+
+struct ConfigVisitor {
+    pub seed: ConfigSeed,
+}
+
+impl<'de> Visitor<'de> for ConfigVisitor {
+    type Value = Config;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a Config struct")
+    }
+
+    fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+    where
+        A: MapAccess<'de>,
+    {
+        let mut sites = None;
+        let mut runs = None;
+
+        while let Some(key) = map.next_key::<String>()? {
+            match key.as_str() {
+                "sites" => sites = Some(map.next_value_seed(self.seed.sites_seed.clone())?),
+                "runs" => runs = Some(map.next_value()?),
+                _ => return Err(serde::de::Error::unknown_field(&key, &["sites"])),
+            }
+        }
+
+        let sites = sites.ok_or_else(|| serde::de::Error::missing_field("sites"))?;
+        let runs = runs.ok_or_else(|| serde::de::Error::missing_field("runs"))?;
+
+        Ok(Config { sites, runs })
+    }
 }
 
 fn validate(args: &Args, config: &Config) -> Result<(), Box<dyn Error>> {
@@ -142,7 +228,7 @@ impl std::fmt::Display for ConfigFileNotFoundError {
     }
 }
 
-pub fn init() -> Result<(Config, Args, PathBuf), Box<dyn Error>> {
+pub fn init(seed: ConfigSeed) -> Result<(Config, Args, PathBuf), Box<dyn Error>> {
     let args = Args::parse();
     let path = PathBuf::from(&args.config_file.clone());
     if !path.exists() || !path.is_file() {
@@ -150,7 +236,7 @@ pub fn init() -> Result<(Config, Args, PathBuf), Box<dyn Error>> {
     }
 
     let json_str = std::fs::read_to_string(args.config_file.clone())?;
-    let config: Config = serde_json::from_str(&json_str)?;
+    let config: Config = seed.deserialize(&mut serde_json::Deserializer::from_str(&json_str))?;
 
     validate(&args, &config)?;
 
