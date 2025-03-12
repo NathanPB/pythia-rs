@@ -1,42 +1,12 @@
 use super::*;
-use std::error::Error;
-use std::fmt::Display;
+use thiserror::Error;
 
-#[derive(Debug)]
-pub struct AlreadyRegisteredError(pub PublicIdentifier);
-
-impl Error for AlreadyRegisteredError {}
-
-impl Display for AlreadyRegisteredError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Identifier {} is already registered.", self.0.id)
-    }
-}
-
-#[derive(Debug)]
-pub struct NamespaceAlreadyClaimedError(
-    #[allow(dead_code)] // This is part of the public API, so it's not dead code.
-    pub  Namespace,
-);
-
-impl Error for NamespaceAlreadyClaimedError {}
-
-impl Display for NamespaceAlreadyClaimedError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Namespace is already claimed.")
-    }
-}
-
-#[derive(Debug)]
-pub struct IllegalNameError(
-    #[allow(dead_code)] // This is part of the public API, so it's not dead code.
-    pub  String,
-);
-
-impl Error for IllegalNameError {}
-
-impl Display for IllegalNameError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "The provided name is empty or contains illegal characters. Only lowercase alphanumeric and dash characters are allowed.")
-    }
+#[derive(Debug, Clone, Error)]
+pub enum RegistryError {
+    #[error("Identifier {0} is already registered.")]
+    AlreadyRegistered(PublicIdentifier),
+    #[error("Namespace {0} is already claimed.")]
+    NamespaceAlreadyClaimed(Namespace),
+    #[error("The provided name is empty or contains illegal characters. Only lowercase alphanumeric and dash characters are allowed.")]
+    IllegalName(String),
 }

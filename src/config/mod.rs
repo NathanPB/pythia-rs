@@ -11,6 +11,7 @@ use std::borrow::Cow;
 use std::error::Error;
 use std::fmt;
 use std::path::PathBuf;
+use thiserror::Error;
 use validator::{Validate, ValidationError};
 
 static ERRCODE_WORKDIR_NOT_DIR: &str = "ERRCODE_WORKDIR_NOT_DIR";
@@ -86,34 +87,6 @@ pub struct Args {
     pub clear_workdir: bool,
 }
 
-#[derive(Debug)]
-pub struct ConfigError(pub Box<dyn Error>);
-impl Error for ConfigError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        Some(&*self.0)
-    }
-}
-
-impl fmt::Display for ConfigError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Unable to load config file: {}", self.0)
-    }
-}
-
-#[derive(Debug)]
-pub struct ArgsError(pub Box<dyn Error>);
-impl Error for ArgsError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        Some(&*self.0)
-    }
-}
-
-impl fmt::Display for ArgsError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Unable to validate arguments: {}", self.0)
-    }
-}
-
 #[serde_inline_default]
 #[derive(Validate, Clone, Debug)]
 pub struct Config {
@@ -125,8 +98,9 @@ pub struct Config {
     pub runs: Vec<RunConfig>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum ConfigSeedBuilderError {
+    #[error("Missing default namespace")]
     MissingDefaultNamespace,
 }
 
@@ -209,34 +183,42 @@ impl<'de> Visitor<'de> for ConfigVisitor {
     }
 }
 
-fn validate(args: &Args, config: &Config) -> Result<(), Box<dyn Error>> {
-    args.validate().map_err(|e| ArgsError(Box::new(e)))?;
-    validate_workdir_overrides(args).map_err(|e| ArgsError(Box::new(e)))?;
-    config.validate().map_err(|e| ConfigError(Box::new(e)))?;
+fn validate(args: &Args, config: &Config) -> Result<(), ConfigError> {
+    args.validate()
+        .map_err(|e| ConfigError::ConfigLoadError(Box::new(e)))?;
+
+    validate_workdir_overrides(args).map_err(|e| ConfigError::ArgsValidationError(e))?;
+
+    config
+        .validate()
+        .map_err(|e| ConfigError::ConfigLoadError(Box::new(e)))?;
 
     Ok(())
 }
 
-#[derive(Debug)]
-pub struct ConfigFileNotFoundError(PathBuf);
-
-impl Error for ConfigFileNotFoundError {}
-
-impl fmt::Display for ConfigFileNotFoundError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Config file not found at path {}", self.0.display())
-    }
+#[derive(Debug, Error)]
+pub enum ConfigError {
+    #[error("Config file not found at path {0}")]
+    ConfigFileNotFound(PathBuf),
+    #[error("Config load failed: {0}")]
+    ConfigLoadError(Box<dyn Error>),
+    #[error("Arguments validation failed: {0}")]
+    ArgsValidationError(ValidationError),
 }
 
-pub fn init(seed: ConfigSeed) -> Result<(Config, Args, PathBuf), Box<dyn Error>> {
+pub fn init(seed: ConfigSeed) -> Result<(Config, Args, PathBuf), ConfigError> {
     let args = Args::parse();
     let path = PathBuf::from(&args.config_file.clone());
     if !path.exists() || !path.is_file() {
-        return Err(Box::new(ConfigFileNotFoundError(path.clone())));
+        return Err(ConfigError::ConfigFileNotFound(path.clone()));
     }
 
-    let json_str = std::fs::read_to_string(args.config_file.clone())?;
-    let config: Config = seed.deserialize(&mut serde_json::Deserializer::from_str(&json_str))?;
+    let json_str = std::fs::read_to_string(args.config_file.clone())
+        .map_err(|e| ConfigError::ConfigLoadError(Box::new(e)))?;
+
+    let config: Config = seed
+        .deserialize(&mut serde_json::Deserializer::from_str(&json_str))
+        .map_err(|e| ConfigError::ConfigLoadError(Box::new(e)))?;
 
     validate(&args, &config)?;
 

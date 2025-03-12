@@ -853,6 +853,7 @@ dependencies = [
  "serde_json",
  "tempfile",
  "tera",
+ "thiserror 2.0.12",
  "validator",
 ]
 

@@ -17,7 +17,6 @@ use error::*;
 pub use identifier::{PublicIdentifier, PublicIdentifierSeed};
 use resources::*;
 use std::collections::HashSet;
-use std::error::Error;
 use std::sync::LazyLock;
 
 /// Validates if the given string is a valid name/id for a [`Namespace`] or [`Identifier`].
@@ -97,14 +96,14 @@ impl<T: Resource> Registry<T> {
         namespace: &Namespace,
         id: &str,
         resource: T,
-    ) -> Result<&mut Self, Box<dyn Error>> {
+    ) -> Result<&mut Self, RegistryError> {
         if !RE_VALID_NAMESPACE_OR_ID.is_match(id) {
-            return Err(Box::new(IllegalNameError(id.to_string())));
+            return Err(RegistryError::IllegalName(id.to_string()));
         }
 
         let identifier = PublicIdentifier::new(namespace.namespace().to_string(), id.to_string());
         if self.is_registered(&identifier) {
-            return Err(Box::new(AlreadyRegisteredError(identifier)));
+            return Err(RegistryError::AlreadyRegistered(identifier));
         }
 
         self.map.insert(
@@ -180,19 +179,16 @@ impl Registries {
     /// For instance, the embedded module will claim the `std` namespace upon application startup.
     /// Plugins that wish to extend the functionality and register their own [`Resource`]s will be provided with a namespace for themselves
     /// and shall it to register all of their [`Resource`]s.
-    pub fn claim_namespace(
-        &mut self,
-        namespace: &'static str,
-    ) -> Result<Namespace, Box<dyn Error>> {
+    pub fn claim_namespace(&mut self, namespace: &'static str) -> Result<Namespace, RegistryError> {
         if !RE_VALID_NAMESPACE_OR_ID.is_match(namespace) {
-            return Err(Box::new(IllegalNameError(namespace.to_string())));
+            return Err(RegistryError::IllegalName(namespace.to_string()));
         }
 
         let namespace = Namespace {
             namespace: namespace.to_string(),
         };
         if self.namespaces.contains(&namespace) {
-            return Err(Box::new(NamespaceAlreadyClaimedError(namespace)));
+            return Err(RegistryError::NamespaceAlreadyClaimed(namespace));
         }
 
         self.namespaces.insert(namespace.clone());

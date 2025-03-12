@@ -1,7 +1,7 @@
-use super::context::Context;
+use super::context::{Context, ContextEvaluationError};
 use std::collections::HashMap;
-use std::error::Error;
 use std::path::PathBuf;
+use thiserror::Error;
 
 pub struct TemplateEngine {
     tera: tera::Tera,
@@ -17,24 +17,31 @@ impl Default for TemplateEngine {
     }
 }
 
-#[derive(Debug)]
-pub struct TemplateError(String);
-
-impl Error for TemplateError {}
-
-impl std::fmt::Display for TemplateError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
+#[derive(Debug, Error)]
+pub enum TemplateError {
+    #[error("IO error: {0}")]
+    IOError(#[from] std::io::Error),
+    #[error("Tera error: {0}")]
+    TeraError(#[from] tera::Error),
+    #[error("Template path {0} is not a file")]
+    TemplateNotAFile(PathBuf),
+    #[error("Context evaluation error: {0}")]
+    ContextEvaluation(#[from] ContextEvaluationError),
 }
 
 impl TemplateEngine {
-    pub fn register(&mut self, run_name: &str, file: &PathBuf) -> Result<(), Box<dyn Error>> {
+    pub fn register(&mut self, run_name: &str, file: &PathBuf) -> Result<(), TemplateError> {
         let full_path = file.canonicalize()?;
         let contents = std::fs::read_to_string(full_path)?;
 
         self.tera.add_raw_template(run_name, contents.as_str())?;
-        self.filenames.insert(run_name.to_string(), file.file_name().expect("TemplateEngine: Can't register because the template file doesn't look like a file.").to_string_lossy().to_string());
+        self.filenames.insert(
+            run_name.to_string(),
+            file.file_name()
+                .ok_or(TemplateError::TemplateNotAFile(file.clone()))?
+                .to_string_lossy()
+                .to_string(),
+        );
         Ok(())
     }
 
@@ -43,11 +50,8 @@ impl TemplateEngine {
     }
 
     /// TODO: error handling
-    pub fn render(&self, ctx: &Context) -> Result<String, Box<dyn Error>> {
-        let str = self
-            .tera
-            .render(ctx.run.name.as_str(), &ctx.tera()?)
-            .unwrap();
+    pub fn render(&self, ctx: &Context) -> Result<String, TemplateError> {
+        let str = self.tera.render(ctx.run.name.as_str(), &ctx.tera()?)?;
         Ok(str)
     }
 }

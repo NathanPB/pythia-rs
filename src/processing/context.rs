@@ -3,9 +3,9 @@ use crate::config;
 use crate::sites::Site;
 use crate::sites::SiteGenerator;
 use serde::{Deserialize, Deserializer, Serialize};
-use std::error::Error;
 use std::path::PathBuf;
 use std::sync::LazyLock;
+use thiserror::Error;
 
 static RE_TEMPLATE_STRING: LazyLock<regex::Regex> =
     LazyLock::new(|| regex::Regex::new(r"(\$\{[^}]+}|[^$]+)").unwrap());
@@ -242,22 +242,10 @@ pub enum ContextValue {
 #[derive(Clone, Debug)]
 pub struct TemplateString(Vec<TemplateStringFragment>);
 
-#[derive(Debug)]
-pub struct InterpolationError {
-    pub key: String,
-    pub placeholder: String,
-}
-
-impl Error for InterpolationError {}
-
-impl std::fmt::Display for InterpolationError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Interpolation error: Placeholder '{}' (in '{}') could not be resolved.",
-            self.placeholder, self.key
-        )
-    }
+#[derive(Debug, Error)]
+pub enum ContextEvaluationError {
+    #[error("Placeholder '{0}' could not be resolved.")]
+    Interpolation(String),
 }
 
 #[derive(Clone, Debug)]
@@ -267,18 +255,18 @@ enum TemplateStringFragment {
 }
 
 impl PrimitiveContextValue {
-    pub fn as_string(&self) -> Result<String, Box<dyn Error>> {
+    pub fn as_string(&self) -> String {
         match self {
-            PrimitiveContextValue::Bool(b) => Ok(b.to_string()),
-            PrimitiveContextValue::Int(i) => Ok(i.to_string()),
-            PrimitiveContextValue::Float(f) => Ok(f.to_string()),
-            PrimitiveContextValue::String(s) => Ok(s.clone()),
+            PrimitiveContextValue::Bool(b) => b.to_string(),
+            PrimitiveContextValue::Int(i) => i.to_string(),
+            PrimitiveContextValue::Float(f) => f.to_string(),
+            PrimitiveContextValue::String(s) => s.clone(),
         }
     }
 }
 
 impl ContextValue {
-    pub fn to_prim(&self, ctx: &Context) -> Result<PrimitiveContextValue, Box<dyn Error>> {
+    pub fn to_prim(&self, ctx: &Context) -> Result<PrimitiveContextValue, ContextEvaluationError> {
         match self {
             ContextValue::Prim(p) => Ok(p.clone()),
             ContextValue::TemplateString(s) => {
@@ -289,18 +277,16 @@ impl ContextValue {
 }
 
 impl TemplateString {
-    pub fn interpolate(&self, ctx: &Context) -> Result<String, Box<dyn Error>> {
+    pub fn interpolate(&self, ctx: &Context) -> Result<String, ContextEvaluationError> {
         let mut s = String::new();
         for fragment in &self.0 {
             match fragment {
                 TemplateStringFragment::Literal(l) => s.push_str(l),
                 TemplateStringFragment::Template(k) => {
-                    let value = ctx.get(k).ok_or(InterpolationError {
-                        key: k.to_string(),
-                        placeholder: k.to_string(),
-                    })?;
-
-                    s.push_str(value.to_prim(ctx)?.as_string()?.as_str());
+                    let value = ctx
+                        .get(k)
+                        .ok_or(ContextEvaluationError::Interpolation(k.to_string()))?;
+                    s.push_str(value.to_prim(ctx)?.as_string().as_str());
                 }
             }
         }
@@ -386,7 +372,7 @@ impl Context {
         path
     }
 
-    pub fn tera(&self) -> Result<tera::Context, Box<dyn Error>> {
+    pub fn tera(&self) -> Result<tera::Context, ContextEvaluationError> {
         let mut ctx = tera::Context::new();
         ctx.insert("site_id", &self.site.id);
         ctx.insert("soil_id", &self.site.id); // Backwards compatibility. In the original Pythia, the site ID was the soil ID.
