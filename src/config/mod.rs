@@ -94,8 +94,8 @@ impl Error for ConfigError {
     }
 }
 
-impl std::fmt::Display for ConfigError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for ConfigError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Unable to load config file: {}", self.0)
     }
 }
@@ -108,8 +108,8 @@ impl Error for ArgsError {
     }
 }
 
-impl std::fmt::Display for ArgsError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for ArgsError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Unable to validate arguments: {}", self.0)
     }
 }
@@ -222,8 +222,8 @@ pub struct ConfigFileNotFoundError(PathBuf);
 
 impl Error for ConfigFileNotFoundError {}
 
-impl std::fmt::Display for ConfigFileNotFoundError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for ConfigFileNotFoundError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Config file not found at path {}", self.0.display())
     }
 }
