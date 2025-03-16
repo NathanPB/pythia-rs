@@ -1,6 +1,5 @@
 use crate::config::{Args, Config};
 use crate::processing::template::TemplateEngine;
-use crate::registry::Registries;
 use context::Context;
 use context::ContextGenerator;
 use pipeline::{create_pipeline_from_config, Pipeline, Pipelines};
@@ -21,12 +20,11 @@ pub struct ProcessingBuilder<'a> {
     pub config: &'a Config,
     pub args: &'a Args,
     pub workdir: PathBuf,
-    pub registries: &'a mut Registries,
 }
 
 impl<'a> ProcessingBuilder<'a> {
     pub fn build(self) -> Result<Processing<Context>, Box<dyn std::error::Error>> {
-        let sitegen = self.config.sites(&self.registries.reg_sitegen_drivers())?;
+        let sitegen = self.config.sites.build()?;
 
         let ctx_gen = ContextGenerator::new(
             Box::new(sitegen),

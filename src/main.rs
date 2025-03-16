@@ -19,6 +19,7 @@ fn main() {
 
     let cfg_seed = config::ConfigSeedBuilder::default()
         .with_default_namespace(namespace.namespace().to_string())
+        .with_registries(&registries)
         .build()
         .unwrap();
 
@@ -53,7 +54,6 @@ fn main() {
         config: &config,
         args: &args,
         workdir,
-        registries: &mut registries,
     }
     .build()
     .unwrap();

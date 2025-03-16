@@ -2,7 +2,7 @@ pub mod runs;
 pub mod sites;
 
 use crate::config::sites::{SiteSourceConfig, SiteSourceConfigSeed};
-use crate::registry::PublicIdentifierSeed;
+use crate::registry::{PublicIdentifierSeed, Registries, ResourceSeed};
 use clap::Parser;
 use runs::*;
 use serde::de::{DeserializeSeed, MapAccess, Visitor};
@@ -88,7 +88,7 @@ pub struct Args {
 }
 
 #[serde_inline_default]
-#[derive(Validate, Clone, Debug)]
+#[derive(Validate, Clone)]
 pub struct Config {
     pub sites: SiteSourceConfig,
 
@@ -102,44 +102,60 @@ pub struct Config {
 pub enum ConfigSeedBuilderError {
     #[error("Missing default namespace")]
     MissingDefaultNamespace,
+    #[error("Missing registries")]
+    MissingRegistries,
 }
 
-pub struct ConfigSeedBuilder {
+pub struct ConfigSeedBuilder<'a> {
     default_namespace: Option<String>,
+    registries: Option<&'a Registries>,
 }
 
-impl Default for ConfigSeedBuilder {
+impl<'a> Default for ConfigSeedBuilder<'a> {
     fn default() -> Self {
         Self {
             default_namespace: None,
+            registries: None,
         }
     }
 }
 
-impl ConfigSeedBuilder {
+impl<'a> ConfigSeedBuilder<'a> {
     pub fn with_default_namespace(mut self, default_namespace: String) -> Self {
         self.default_namespace = Some(default_namespace);
         self
     }
 
-    pub fn build(self) -> Result<ConfigSeed, ConfigSeedBuilderError> {
+    pub fn with_registries(mut self, registries: &'a Registries) -> Self {
+        self.registries = Some(registries);
+        self
+    }
+
+    pub fn build(self) -> Result<ConfigSeed<'a>, ConfigSeedBuilderError> {
+        let registries = self
+            .registries
+            .ok_or(ConfigSeedBuilderError::MissingRegistries)?;
+
         Ok(ConfigSeed {
             sites_seed: SiteSourceConfigSeed {
-                id_seed: PublicIdentifierSeed {
-                    default_namespace: self
-                        .default_namespace
-                        .ok_or(ConfigSeedBuilderError::MissingDefaultNamespace)?,
+                resource_seed: ResourceSeed {
+                    registry: registries.reg_sitegen_drivers(),
+                    id_seed: PublicIdentifierSeed {
+                        default_namespace: self
+                            .default_namespace
+                            .ok_or(ConfigSeedBuilderError::MissingDefaultNamespace)?,
+                    },
                 },
             },
         })
     }
 }
 
-pub struct ConfigSeed {
-    pub sites_seed: SiteSourceConfigSeed,
+pub struct ConfigSeed<'a> {
+    pub sites_seed: SiteSourceConfigSeed<'a>,
 }
 
-impl<'de> DeserializeSeed<'de> for ConfigSeed {
+impl<'de> DeserializeSeed<'de> for ConfigSeed<'de> {
     type Value = Config;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
@@ -150,11 +166,11 @@ impl<'de> DeserializeSeed<'de> for ConfigSeed {
     }
 }
 
-struct ConfigVisitor {
-    pub seed: ConfigSeed,
+struct ConfigVisitor<'a> {
+    pub seed: ConfigSeed<'a>,
 }
 
-impl<'de> Visitor<'de> for ConfigVisitor {
+impl<'de> Visitor<'de> for ConfigVisitor<'de> {
     type Value = Config;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {

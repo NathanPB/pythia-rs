@@ -11,10 +11,12 @@ pub mod error;
 mod identifier;
 pub mod itself;
 pub mod resources;
+mod serialize;
 
 use crate::utils::threehashmap::K2HashMap;
 use error::*;
 pub use identifier::{PublicIdentifier, PublicIdentifierSeed};
+pub use serialize::{ResourceSeed};
 use resources::*;
 use std::collections::HashSet;
 use std::sync::LazyLock;
