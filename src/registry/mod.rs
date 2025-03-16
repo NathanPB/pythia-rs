@@ -69,7 +69,8 @@ impl std::fmt::Display for Namespace {
 }
 
 /// Used to define valid resources that can be registered on the [`Registry`].
-pub trait Resource: Sized {}
+/// Resources must be safe-[`Clone`]able.
+pub trait Resource: Sized + Clone {}
 
 /// Stores [`Resource`]s, identified by [`Identifier`], and provides basic operations on them.
 pub struct Registry<T: Resource> {
@@ -239,7 +240,7 @@ mod tests {
         assert_eq!(namespace.id("bar").to_string(), "foo:bar");
     }
 
-    #[derive(Debug, PartialEq)]
+    #[derive(Debug, PartialEq, Clone)]
     struct DummyResource;
     impl Resource for DummyResource {}
 
