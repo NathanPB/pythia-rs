@@ -5,7 +5,7 @@ use std::error::Error;
 
 pub fn init_itself(registries: &mut super::Registries) -> Result<Namespace, Box<dyn Error>> {
     let namespace = registries.claim_namespace("std")?;
-    register_sitegen_drivers(&namespace, registries.reg_sitegen_drivers())?;
+    register_sitegen_drivers(&namespace, registries.regmut_sitegen_drivers())?;
     Ok(namespace)
 }
 
