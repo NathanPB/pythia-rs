@@ -1,7 +1,6 @@
 use crate::config::{Args, Config};
 use crate::processing::template::TemplateEngine;
-use context::Context;
-use context::ContextGenerator;
+use context::{Context, ContextGenerator};
 use pipeline::{create_pipeline_from_config, Pipeline, Pipelines};
 use processor::unbatched::UnbatchedProcessor;
 use std::path::PathBuf;
